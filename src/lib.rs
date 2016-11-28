@@ -1,9 +1,8 @@
 #[cfg(test)]
 
-mod stringmatcher;
 mod fuzz;
-mod process;
 mod utils;
+mod string_matcher;
 
 mod tests {
     #[test]

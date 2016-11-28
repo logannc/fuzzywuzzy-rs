@@ -1,9 +1,9 @@
 use std::collections::HashSet;
+use string_matcher;
 use utils;
-use stringmatcher;
 
 pub fn ratio(s1: &str, s2: &str) -> u8 {
-    let m = stringmatcher::SequenceMatcher::new(s1, s2);
+    let m = string_matcher::SequenceMatcher::new(s1, s2);
     (m.ratio() * 100) as u8
 }
 
@@ -13,7 +13,7 @@ pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
     } else {
         (s2.to_string(), s1.to_string())
     };
-    let m = stringmatcher::SequenceMatcher::new(shorter, longer);
+    let m = string_matcher::SequenceMatcher::new(shorter, longer);
     let blocks = m.get_matching_blocks();
     let scores: Vec<f32> = Vec::new();
     for (idx_1, idx_2, len) in blocks {
@@ -24,7 +24,7 @@ pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
         };
         let long_end = long_start + shorter.len();
         let long_substr = longer[long_start..long_end];
-        let m2 = stringmatcher::SequenceMatcher::new(shorter, long_substr);
+        let m2 = string_matcher::SequenceMatcher::new(shorter, long_substr);
         let r = m2.ratio();
         if r > 0.995 {
             return 100
