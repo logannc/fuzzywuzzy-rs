@@ -1,10 +1,11 @@
 use std::collections::HashSet;
+use std::cmp::Ordering::Equal;
 use string_matcher;
 use utils;
 
 pub fn ratio(s1: &str, s2: &str) -> u8 {
     let m = string_matcher::SequenceMatcher::new(s1, s2);
-    (m.ratio() * 100) as u8
+    (m.ratio() * 100.0) as u8
 }
 
 pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
@@ -13,9 +14,9 @@ pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
     } else {
         (s2.to_string(), s1.to_string())
     };
-    let m = string_matcher::SequenceMatcher::new(shorter, longer);
+    let m = string_matcher::SequenceMatcher::new(&shorter, &longer);
     let blocks = m.get_matching_blocks();
-    let scores: Vec<f32> = Vec::new();
+    let mut scores: Vec<f32> = Vec::new();
     for (idx_1, idx_2, len) in blocks {
         let long_start = if idx_2 - idx_1 > 0 {
             idx_2 - idx_1
@@ -23,16 +24,16 @@ pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
             0
         };
         let long_end = long_start + shorter.len();
-        let long_substr = longer[long_start..long_end];
-        let m2 = string_matcher::SequenceMatcher::new(shorter, long_substr);
+        let long_substr = &longer[long_start..long_end];
+        let m2 = string_matcher::SequenceMatcher::new(&shorter, long_substr);
         let r = m2.ratio();
         if r > 0.995 {
             return 100
         } else {
-            scores.append(r)
+            scores.push(r.clone())
         }
     }
-    (scores.iter().max().unwrap_or(0.0) * 100) as u8
+    (scores.iter().max_by(|a,b| a.partial_cmp(b).unwrap_or(Equal)).unwrap_or(&0.0) * 100.0) as u8
 }
 
 fn process_and_sort(s: &str, force_ascii: bool, full_process: bool) -> String {
