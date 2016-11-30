@@ -1,11 +1,19 @@
 use std::collections::HashSet;
-use std::cmp::Ordering::Equal;
-use string_matcher;
 use utils;
 
 pub fn ratio(s1: &str, s2: &str) -> u8 {
-    let m = string_matcher::SequenceMatcher::new(s1, s2);
-    (m.ratio() * 100.0) as u8
+    let (shorter, longer) = if s1.len() <= s2.len() {
+        (s1, s2)
+    } else {
+        (s2, s1)
+    };
+    let matches: usize = utils::get_matching_blocks(shorter, longer).iter().map(|&(_,_,s)| s).sum();
+    let sumlength: f32 = (s1.len() + s2.len()) as f32;
+    if sumlength > 0.0 {
+        (100.0 * (2.0 * (matches as f32) / sumlength)).round() as u8
+    } else {
+        100
+    }
 }
 
 pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
@@ -14,26 +22,18 @@ pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
     } else {
         (s2.to_string(), s1.to_string())
     };
-    let m = string_matcher::SequenceMatcher::new(&shorter, &longer);
-    let blocks = m.get_matching_blocks();
-    let mut scores: Vec<f32> = Vec::new();
-    for (idx_1, idx_2, len) in blocks {
-        let long_start = if idx_2 - idx_1 > 0 {
-            idx_2 - idx_1
-        } else {
-            0
-        };
-        let long_end = long_start + shorter.len();
-        let long_substr = &longer[long_start..long_end];
-        let m2 = string_matcher::SequenceMatcher::new(&shorter, long_substr);
-        let r = m2.ratio();
-        if r > 0.995 {
+    let blocks = utils::get_matching_blocks(&shorter, &longer);
+    let mut max: u8 = 0;
+    for (i,_,k) in blocks {
+        let substr = &shorter[i..i+k];
+        let r = ratio(&shorter, substr);
+        if r > 99 {
             return 100
-        } else {
-            scores.push(r.clone())
+        } else if r > max {
+            max = r;
         }
     }
-    (scores.iter().max_by(|a,b| a.partial_cmp(b).unwrap_or(Equal)).unwrap_or(&0.0) * 100.0) as u8
+    max
 }
 
 fn process_and_sort(s: &str, force_ascii: bool, full_process: bool) -> String {
@@ -115,11 +115,11 @@ pub fn partial_token_set_ratio(s1: &str, s2: &str, force_ascii: bool, full_proce
     token_set(s1, s2, true, force_ascii, full_process)
 }
 
-pub fn QRatio(s1: &str, s2: &str, force_ascii: bool) -> u8 {
+pub fn qratio(s1: &str, s2: &str, force_ascii: bool) -> u8 {
     let (p1, p2) = (utils::full_process(s1, force_ascii), utils::full_process(s2, force_ascii));
     ratio(&p1, &p2)
 }
 
-pub fn UQRatio(s1: &str, s2: &str, force_ascii: bool) -> u8 {
-    QRatio(s1, s2, false)
+pub fn uqratio(s1: &str, s2: &str) -> u8 {
+    qratio(s1, s2, false)
 }
