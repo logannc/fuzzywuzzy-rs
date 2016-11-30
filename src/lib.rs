@@ -1,5 +1,3 @@
-extern crate distance;
-
 pub mod utils;
 pub mod fuzz;
 
@@ -39,16 +37,28 @@ mod tests {
 
     #[test]
     fn partial_token_sort() {
-        assert_eq!(fuzz::partial_token_set_ratio("new york mets vs atlanta braves", "atlanta braves vs new york mets", false, false), 100);
+        assert_eq!(fuzz::partial_token_set_ratio("new york mets vs atlanta braves",
+                                                 "atlanta braves vs new york mets",
+                                                 false,
+                                                 false),
+                   100);
     }
 
     #[test]
     fn token_set() {
-        assert_eq!(fuzz::token_set_ratio("new york mets vs atlanta braves", "atlanta braves vs new york mets", false, false), 100);
+        assert_eq!(fuzz::token_set_ratio("new york mets vs atlanta braves",
+                                         "atlanta braves vs new york mets",
+                                         false,
+                                         false),
+                   100);
     }
 
     #[test]
     fn partial_token_set() {
-        assert_eq!(fuzz::partial_token_set_ratio("new york mets vs atlanta braves", "new york city mets - atlanta braves", false, false), 100);
+        assert_eq!(fuzz::partial_token_set_ratio("new york mets vs atlanta braves",
+                                                 "new york city mets - atlanta braves",
+                                                 false,
+                                                 false),
+                   100);
     }
 }

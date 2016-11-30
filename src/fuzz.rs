@@ -7,7 +7,8 @@ pub fn ratio(s1: &str, s2: &str) -> u8 {
     } else {
         (s2, s1)
     };
-    let matches: usize = utils::get_matching_blocks(shorter, longer).iter().map(|&(_,_,s)| s).sum();
+    let matches: usize =
+        utils::get_matching_blocks(shorter, longer).iter().map(|&(_, _, s)| s).sum();
     let sumlength: f32 = (s1.len() + s2.len()) as f32;
     if sumlength > 0.0 {
         (100.0 * (2.0 * (matches as f32) / sumlength)).round() as u8
@@ -24,11 +25,11 @@ pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
     };
     let blocks = utils::get_matching_blocks(&shorter, &longer);
     let mut max: u8 = 0;
-    for (i,_,k) in blocks {
-        let substr = &shorter[i..i+k];
+    for (i, _, k) in blocks {
+        let substr = &shorter[i..i + k];
         let r = ratio(&shorter, substr);
         if r > 99 {
-            return 100
+            return 100;
         } else if r > max {
             max = r;
         }
@@ -93,17 +94,21 @@ fn token_set(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process:
         intersect_str.to_string()
     };
     if partial {
-        vec![
-            partial_ratio(&intersect_str, &combined_1to2),
-            partial_ratio(&intersect_str, &combined_2to1),
-            partial_ratio(&combined_1to2, &combined_2to1)
-        ].iter().max().unwrap().clone()
+        vec![partial_ratio(&intersect_str, &combined_1to2),
+             partial_ratio(&intersect_str, &combined_2to1),
+             partial_ratio(&combined_1to2, &combined_2to1)]
+            .iter()
+            .max()
+            .unwrap()
+            .clone()
     } else {
-        vec![
-            ratio(&intersect_str, &combined_1to2),
-            ratio(&intersect_str, &combined_2to1),
-            ratio(&combined_1to2, &combined_2to1)
-        ].iter().max().unwrap().clone()
+        vec![ratio(&intersect_str, &combined_1to2),
+             ratio(&intersect_str, &combined_2to1),
+             ratio(&combined_1to2, &combined_2to1)]
+            .iter()
+            .max()
+            .unwrap()
+            .clone()
     }
 }
 
