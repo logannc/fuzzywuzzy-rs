@@ -193,7 +193,7 @@ pub fn wratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
         return 0;
     }
     let mut try_partial = true;
-    let unbase_scale = 0.95;
+    const UNBASE_SCALE: f64 = 0.95;
     let mut partial_scale = 0.90;
 
     let base = ratio(p1r, p2r);
@@ -211,13 +211,13 @@ pub fn wratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
 
     if try_partial {
         let partial = partial_ratio(p1r, p2r) as f64 * partial_scale;
-        let ptsor = partial_token_sort_ratio(p1r, p2r, true, false) as f64 * unbase_scale * partial_scale;
-        let ptser = partial_token_set_ratio(p1r, p2r, true, false) as f64 * unbase_scale * partial_scale;
+        let ptsor = partial_token_sort_ratio(p1r, p2r, true, false) as f64 * UNBASE_SCALE * partial_scale;
+        let ptser = partial_token_set_ratio(p1r, p2r, true, false) as f64 * UNBASE_SCALE * partial_scale;
         // This conversion to u8 from the maximum f64 seems spooky, but let's hope nothing bad happens!
         return vec![base as f64, partial, ptsor, ptser].iter().cloned().fold(0./0., f64::max).round() as u8;
     }
-    let tsor = token_sort_ratio(p1r, p2r, true, false) as f64 * unbase_scale;
-    let tser = token_set_ratio(p1r, p2r, true, false) as f64 * unbase_scale;
+    let tsor = token_sort_ratio(p1r, p2r, true, false) as f64 * UNBASE_SCALE;
+    let tser = token_set_ratio(p1r, p2r, true, false) as f64 * UNBASE_SCALE;
     vec![base as f64, tsor, tser].iter().cloned().fold(0./0., f64::max).round() as u8
 }
 
