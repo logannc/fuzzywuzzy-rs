@@ -1,13 +1,16 @@
-use std::ascii::AsciiExt;
-
 pub fn full_process(s: &str, force_ascii: bool) -> String {
     let mut result = s.to_string();
     if force_ascii {
-        result = result.chars().filter(AsciiExt::is_ascii).collect();
+        result = result.chars().filter(|c| c.is_ascii()).collect();
     }
     result = result.chars().map(|c| if c.is_alphanumeric() { c } else { ' ' }).collect();
     result.make_ascii_lowercase();
     result.trim().to_string()
+}
+
+/// Ensures that the input string is non-empty.
+pub fn validate_string(s: &str) -> bool {
+    !s.is_empty()
 }
 
 fn find_longest_match<'a>(shorter: &'a str,
