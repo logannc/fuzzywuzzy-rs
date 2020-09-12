@@ -72,12 +72,16 @@ fn token_sort(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process
 
 /// Return a measure of the sequences' similarity between 0 and 100, but sort the token before
 /// comparing.
+///
+/// By default, force_ascii and full_process should be true.
 pub fn token_sort_ratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
     token_sort(s1, s2, false, force_ascii, full_process)
 }
 
 /// Return the ratio of the most similar substring as a number between 0 and 100, but sort the token
 /// before comparing.
+///
+/// By default, force_ascii and full_process should be true.
 pub fn partial_token_sort_ratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
     token_sort(s1, s2, true, force_ascii, full_process)
 }
@@ -219,4 +223,150 @@ pub fn wratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
 
 pub fn uwratio(s1: &str, s2: &str, full_process: bool) -> u8 {
     wratio(s1, s2, false, full_process)
+}
+
+#[cfg(test)]
+mod tests {
+    use fuzz;
+    use utils;
+
+    struct Fixture {
+        s1: &'static str,
+        s1a: &'static str,
+        s2: &'static str,
+        s3: &'static str,
+        s4: &'static str,
+        s5: &'static str,
+        s6: &'static str,
+        s7: &'static str,
+        s8: &'static str,
+        s8a: &'static str,
+        s9: &'static str,
+        s9a: &'static str,
+        s10: &'static str,
+        s10a: &'static str,
+        // TODO: Test silly corner cases,
+        cirque_strings: &'static [&'static str; 6],
+        baseball_strings: &'static [&'static str; 4],
+    }
+    
+    impl Fixture {
+        pub fn new() -> Self {
+            Self {
+                s1: "new york mets",
+                s1a: "new york mets",
+                s2: "new YORK mets",
+                s3: "the wonderful new york mets",
+                s4: "new york mets vs atlanta braves",
+                s5: "atlanta braves vs new york mets",
+                s6: "new york mets - atlanta braves",
+                s7: "new york city mets - atlanta braves",
+                s8: "{",
+                s8a: "{",
+                s9: "{a",
+                s9a: "{a",
+                s10: "a{",
+                s10a: "{b",
+                cirque_strings: &[
+                    "cirque du soleil - zarkana - las vegas",
+                    "cirque du soleil ",
+                    "cirque du soleil las vegas",
+                    "zarkana las vegas",
+                    "las vegas cirque du soleil at the bellagio",
+                    "zarakana - cirque du soleil - bellagio"
+                ],
+                baseball_strings: &[
+                    "new york mets vs chicago cubs",
+                    "chicago cubs vs chicago white sox",
+                    "philladelphia phillies vs atlanta braves",
+                    "braves vs mets",
+                ]
+            }
+        }
+    }
+
+    #[test]
+    fn test_equal() {
+        let f = Fixture::new();
+        assert_eq!(fuzz::ratio(f.s1, f.s1a), 100);
+        assert_eq!(fuzz::ratio(f.s8, f.s8a), 100);
+        assert_eq!(fuzz::ratio(f.s9, f.s9a), 100);
+    }
+
+    #[test]
+    fn test_case_insensitive() {
+        let f = Fixture::new();
+        assert_ne!(fuzz::ratio(f.s1, f.s2), 100);
+        assert_eq!(fuzz::ratio(utils::full_process(f.s1, false).as_str(), utils::full_process(f.s1a, false).as_str()), 100);
+    }
+
+    #[test]
+    fn test_partial_ratio() {
+        let f = Fixture::new();
+        assert_eq!(fuzz::partial_ratio(f.s1, f.s3), 100)
+    }
+
+    #[test]
+    fn test_token_sort_ratio() {
+        let f = Fixture::new();
+        assert_eq!(fuzz::token_sort_ratio(f.s1, f.s1a, true, true), 100)
+    }
+
+    #[test]
+    fn test_partial_token_sort_ratio() {
+        let f = Fixture::new();
+        assert_eq!(fuzz::partial_token_sort_ratio(f.s1, f.s1a, true, true), 100);
+        assert_eq!(fuzz::partial_token_sort_ratio(f.s4, f.s5, true, true), 100);
+        assert_eq!(fuzz::partial_token_sort_ratio(f.s8, f.s8a, true, false), 100);
+        assert_eq!(fuzz::partial_token_sort_ratio(f.s9, f.s9a, true, true), 100);
+        assert_eq!(fuzz::partial_token_sort_ratio(f.s9, f.s9a, true, false), 100);
+        assert_eq!(fuzz::partial_token_sort_ratio(f.s10, f.s10a, true, false), 100);
+    }
+
+    #[test]
+    fn test_token_set_ratio() {
+        let f = Fixture::new();
+        assert_eq!(fuzz::token_set_ratio(f.s4, f.s5, true, true), 100);
+        assert_eq!(fuzz::token_set_ratio(f.s8, f.s8a, true, false), 100);
+        assert_eq!(fuzz::token_set_ratio(f.s9, f.s9a, true, true), 100);
+        assert_eq!(fuzz::token_set_ratio(f.s9, f.s9a, true, false), 100);
+        assert_eq!(fuzz::token_set_ratio(f.s10, f.s10a, true, false), 50);
+    }
+
+    #[test]
+    fn test_partial_token_set_ratio() {
+        let f = Fixture::new();
+        assert_eq!(fuzz::partial_token_set_ratio(f.s4, f.s7, true, true), 100);
+    }
+
+    #[test]
+    fn test_wratio_equal() {
+        let f = Fixture::new();
+        assert_eq!(fuzz::wratio(f.s1, f.s1a, true, true), 100);
+    }
+
+    #[test]
+    fn test_wratio_case_insensitive() {
+        let f = Fixture::new();
+        assert_eq!(fuzz::wratio(f.s1, f.s2, true, true), 100);
+    }
+
+    #[test]
+    fn test_wratio_partial_match() {
+        let f = Fixture::new();
+        assert_eq!(fuzz::wratio(f.s1, f.s3, true, true), 90);
+    }
+
+    #[test]
+    fn test_wratio_misordered_match() {
+        let f = Fixture::new();
+        assert_eq!(fuzz::wratio(f.s4, f.s5, true, true), 50);
+    }
+
+    #[test]
+    fn test_empty_string_score_100() {
+        let f = Fixture::new();
+        assert_eq!(fuzz::ratio("", ""), 100);
+        assert_eq!(fuzz::partial_ratio("", ""), 100);
+    }
 }

@@ -1,5 +1,6 @@
 pub mod utils;
 pub mod fuzz;
+pub mod process;
 
 #[cfg(test)]
 mod tests {

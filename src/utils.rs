@@ -1,3 +1,9 @@
+/// Process string by
+/// # removing all but letters and numbers
+/// # trim whitespace
+/// # force to lower case
+///
+/// If force_ascii == true, force convert to ascii. By default, this is false.
 pub fn full_process(s: &str, force_ascii: bool) -> String {
     let mut result = s.to_string();
     if force_ascii {
