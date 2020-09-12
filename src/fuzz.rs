@@ -291,25 +291,33 @@ mod tests {
         assert_eq!(fuzz::ratio(f.s1, f.s1a), 100);
         assert_eq!(fuzz::ratio(f.s8, f.s8a), 100);
         assert_eq!(fuzz::ratio(f.s9, f.s9a), 100);
+        // TODO: These are from the Logan's tests, so testing these scores may not be valid.
+        assert_eq!(fuzz::ratio("hello test", "hello world"), 57);
+        assert_eq!(fuzz::ratio("hello test", "hello worlasdfasd"), 52);
     }
 
     #[test]
     fn test_case_insensitive() {
         let f = Fixture::new();
         assert_ne!(fuzz::ratio(f.s1, f.s2), 100);
-        assert_eq!(fuzz::ratio(utils::full_process(f.s1, false).as_str(), utils::full_process(f.s1a, false).as_str()), 100);
+        assert_eq!(fuzz::ratio(utils::full_process(f.s1, false).as_str(), utils::full_process(f.s2, false).as_str()), 100);
     }
 
     #[test]
     fn test_partial_ratio() {
         let f = Fixture::new();
-        assert_eq!(fuzz::partial_ratio(f.s1, f.s3), 100)
+        assert_eq!(fuzz::partial_ratio(f.s1, f.s3), 100);
+        // TODO: These are from the Logan's tests, so testing these scores may not be valid.
+        assert_eq!(fuzz::partial_ratio("hello", "hello world"), 100);
     }
 
     #[test]
     fn test_token_sort_ratio() {
         let f = Fixture::new();
-        assert_eq!(fuzz::token_sort_ratio(f.s1, f.s1a, true, true), 100)
+        assert_eq!(fuzz::token_sort_ratio(f.s1, f.s1a, true, true), 100);
+        // TODO: These are from the Logan's tests, so testing these scores may not be valid.
+        assert_eq!(fuzz::token_sort_ratio("hello world", "world hello", false, false),
+                   100);
     }
 
     #[test]
