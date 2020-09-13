@@ -411,7 +411,7 @@ mod tests {
     #[test]
     fn test_wratio_misordered_match() {
         let f = Fixture::new();
-        assert_eq!(fuzz::wratio(f.s4, f.s5, true, true), 50);
+        assert_eq!(fuzz::wratio(f.s4, f.s5, true, true), 95);
     }
 
     #[test]
