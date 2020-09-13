@@ -55,6 +55,14 @@ where
         return None;
     }
     best.iter()
+        // Python and Rust have different semantics for which maximum value from an iterator is
+        // returned when there are multiple equal values! In Python (when using max built-in), if
+        // multiple items are maximal, the function returns the first one encountered. In Rust (when
+        // using .max_by), if several elements are equally maximum, the last element is returned.
+        //
+        // The solution here is to reverse the iterator to ensure the actual first item in the
+        // original ordering of `choices` is returned (as this is the behavior of fuzzywuzzy).
+        .rev()
         .cloned()
         .max_by(|(_, acc_score), (_, score)| acc_score.cmp(score))
 }
