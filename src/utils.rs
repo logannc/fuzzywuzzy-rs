@@ -9,7 +9,10 @@ pub fn full_process(s: &str, force_ascii: bool) -> String {
     if force_ascii {
         result = result.chars().filter(|c| c.is_ascii()).collect();
     }
-    result = result.chars().map(|c| if c.is_alphanumeric() { c } else { ' ' }).collect();
+    result = result
+        .chars()
+        .map(|c| if c.is_alphanumeric() { c } else { ' ' })
+        .collect();
     result.make_ascii_lowercase();
     result.trim().to_string()
 }
@@ -19,13 +22,14 @@ pub fn validate_string(s: &str) -> bool {
     !s.is_empty()
 }
 
-fn find_longest_match<'a>(shorter: &'a str,
-                          longer: &'a str,
-                          low1: usize,
-                          high1: usize,
-                          low2: usize,
-                          high2: usize)
-                          -> (usize, usize, usize) {
+fn find_longest_match<'a>(
+    shorter: &'a str,
+    longer: &'a str,
+    low1: usize,
+    high1: usize,
+    low2: usize,
+    high2: usize,
+) -> (usize, usize, usize) {
     // https://github.com/python-git/python/blob/master/Lib/difflib.py#L351
     // algo:
     //  In other words, of all maximal matching blocks, return one that
@@ -68,7 +72,6 @@ pub fn get_matching_blocks<'a>(shorter: &'a str, longer: &'a str) -> Vec<(usize,
                 queue.push((i + k, high1, j + k, high2));
             }
         }
-
     }
     matching_blocks.sort(); // Is this necessary?
     let (mut i1, mut j1, mut k1) = (0, 0, 0);

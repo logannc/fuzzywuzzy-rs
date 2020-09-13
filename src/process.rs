@@ -4,17 +4,17 @@
 /// the match and its score. If a dictionary is used, also returns the key for each match.
 ///
 /// TODO: Add support for choices as HashMap<&str, &str>, not only as slice &[&str].
-pub fn extract_without_order(
+pub fn extract_without_order<'a, I, T>(
     query: &str,
-    choices: &[&str],
+    choices: I,
     processor: &dyn Fn(&str, bool) -> String,
     scorer: &dyn Fn(&str, &str, bool, bool) -> u8,
-    score_cutoff: u8
-) -> Vec<(String, u8)> {
-    if choices.is_empty() {
-        return vec![];
-    }
-
+    score_cutoff: u8,
+) -> Vec<(String, u8)>
+where
+    I: IntoIterator<Item = T>,
+    T: AsRef<str>,
+{
     let processed_query: String = processor(query, false);
     if processed_query.is_empty() {
         println!("Applied processor reduces input query to empty string, all comparisons will have score 0. [Query: '{0}']", processed_query.as_str());
@@ -25,10 +25,10 @@ pub fn extract_without_order(
 
     let mut results = vec![];
     for choice in choices {
-        let processed: String = processor(choice, false);
+        let processed: String = processor(choice.as_ref(), false);
         let score: u8 = scorer(processed_query.as_str(), processed.as_str(), true, true);
         if score >= score_cutoff {
-            results.push((choice.to_string(), score))
+            results.push((choice.as_ref().to_string(), score))
         }
     }
     results
@@ -39,27 +39,31 @@ pub fn extract_without_order(
 /// This is a convenience method which returns the single best choice.
 ///
 /// TODO: Add support for choices as HashMap<&str, &str>, not only as slice &[&str].
-pub fn extract_one(
+pub fn extract_one<'a, I, T>(
     query: &str,
-    choices: &[&str],
+    choices: I,
     processor: &dyn Fn(&str, bool) -> String,
     scorer: &dyn Fn(&str, &str, bool, bool) -> u8,
-    score_cutoff: u8
-) -> Option<(String, u8)> {
+    score_cutoff: u8,
+) -> Option<(String, u8)>
+where
+    I: IntoIterator<Item = T>,
+    T: AsRef<str>,
+{
     let best = extract_without_order(query, choices, processor, scorer, score_cutoff);
     if best.is_empty() {
-        return None
+        return None;
     }
-    best.iter().cloned().max_by(|(_, acc_score), (_, score)| {
-        acc_score.cmp(score)
-    })
+    best.iter()
+        .cloned()
+        .max_by(|(_, acc_score), (_, score)| acc_score.cmp(score))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use utils;
     use fuzz;
+    use utils;
 
     mod process {
         use super::*;
@@ -76,7 +80,15 @@ mod tests {
         // Call extract_one, unwrap the option, and return 0th element (the choice).
         fn unwrap_extract_one_choice(query: &str) -> String {
             // Specify sane defaults.
-            extract_one(query, get_baseball_strings(), &utils::full_process, &fuzz::wratio, 0).unwrap().0
+            extract_one(
+                query,
+                get_baseball_strings().iter(),
+                &utils::full_process,
+                &fuzz::wratio,
+                0,
+            )
+            .unwrap()
+            .0
         }
 
         #[test]

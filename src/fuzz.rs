@@ -7,8 +7,10 @@ pub fn ratio(s1: &str, s2: &str) -> u8 {
     } else {
         (s2, s1)
     };
-    let matches: usize =
-        utils::get_matching_blocks(shorter, longer).iter().map(|&(_, _, s)| s).sum();
+    let matches: usize = utils::get_matching_blocks(shorter, longer)
+        .iter()
+        .map(|&(_, _, s)| s)
+        .sum();
     let sumlength: f32 = (s1.len() + s2.len()) as f32;
     if sumlength > 0.0 {
         (100.0 * (2.0 * (matches as f32) / sumlength)).round() as u8
@@ -93,7 +95,10 @@ pub fn partial_token_sort_ratio(s1: &str, s2: &str, force_ascii: bool, full_proc
 ///  # controls for unordered partial matches
 fn token_set(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process: bool) -> u8 {
     let (p1, p2) = if full_process {
-        (utils::full_process(s1, force_ascii), utils::full_process(s2, force_ascii))
+        (
+            utils::full_process(s1, force_ascii),
+            utils::full_process(s2, force_ascii),
+        )
     } else {
         (s1.to_string(), s2.to_string())
     };
@@ -119,21 +124,25 @@ fn token_set(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process:
         intersect_str.to_string()
     };
     if partial {
-        vec![partial_ratio(&intersect_str, &combined_1to2),
-             partial_ratio(&intersect_str, &combined_2to1),
-             partial_ratio(&combined_1to2, &combined_2to1)]
-            .iter()
-            .max()
-            .unwrap()
-            .clone()
+        vec![
+            partial_ratio(&intersect_str, &combined_1to2),
+            partial_ratio(&intersect_str, &combined_2to1),
+            partial_ratio(&combined_1to2, &combined_2to1),
+        ]
+        .iter()
+        .max()
+        .unwrap()
+        .clone()
     } else {
-        vec![ratio(&intersect_str, &combined_1to2),
-             ratio(&intersect_str, &combined_2to1),
-             ratio(&combined_1to2, &combined_2to1)]
-            .iter()
-            .max()
-            .unwrap()
-            .clone()
+        vec![
+            ratio(&intersect_str, &combined_1to2),
+            ratio(&intersect_str, &combined_2to1),
+            ratio(&combined_1to2, &combined_2to1),
+        ]
+        .iter()
+        .max()
+        .unwrap()
+        .clone()
     }
 }
 
@@ -150,7 +159,10 @@ pub fn partial_token_set_ratio(s1: &str, s2: &str, force_ascii: bool, full_proce
 //  Runs utils::full_process on both strings.
 //  Short circuits if either of the strings is empty after processing.
 pub fn qratio(s1: &str, s2: &str, force_ascii: bool) -> u8 {
-    let (p1, p2) = (utils::full_process(s1, force_ascii), utils::full_process(s2, force_ascii));
+    let (p1, p2) = (
+        utils::full_process(s1, force_ascii),
+        utils::full_process(s2, force_ascii),
+    );
     if !utils::validate_string(p1.as_str()) || !utils::validate_string(p2.as_str()) {
         return 0;
     }
@@ -184,7 +196,10 @@ pub fn uqratio(s1: &str, s2: &str) -> u8 {
 ///    round it and return it as an integer.
 pub fn wratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
     let (p1, p2) = if full_process {
-        (utils::full_process(s1, force_ascii), utils::full_process(s2, force_ascii))
+        (
+            utils::full_process(s1, force_ascii),
+            utils::full_process(s2, force_ascii),
+        )
     } else {
         (s1.to_string(), s2.to_string())
     };
@@ -197,7 +212,8 @@ pub fn wratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
     let mut partial_scale = 0.90;
 
     let base = ratio(p1r, p2r);
-    let len_ratio = std::cmp::max(p1.len(), p2.len()) as f64 / std::cmp::min(p1.len(), p2.len()) as f64;
+    let len_ratio =
+        std::cmp::max(p1.len(), p2.len()) as f64 / std::cmp::min(p1.len(), p2.len()) as f64;
 
     // if strings are similar length, don't use partials
     if len_ratio < 1.5 {
@@ -211,14 +227,24 @@ pub fn wratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
 
     if try_partial {
         let partial = partial_ratio(p1r, p2r) as f64 * partial_scale;
-        let ptsor = partial_token_sort_ratio(p1r, p2r, true, false) as f64 * UNBASE_SCALE * partial_scale;
-        let ptser = partial_token_set_ratio(p1r, p2r, true, false) as f64 * UNBASE_SCALE * partial_scale;
+        let ptsor =
+            partial_token_sort_ratio(p1r, p2r, true, false) as f64 * UNBASE_SCALE * partial_scale;
+        let ptser =
+            partial_token_set_ratio(p1r, p2r, true, false) as f64 * UNBASE_SCALE * partial_scale;
         // This conversion to u8 from the maximum f64 seems spooky, but let's hope nothing bad happens!
-        return vec![base as f64, partial, ptsor, ptser].iter().cloned().fold(0./0., f64::max).round() as u8;
+        return vec![base as f64, partial, ptsor, ptser]
+            .iter()
+            .cloned()
+            .fold(0. / 0., f64::max)
+            .round() as u8;
     }
     let tsor = token_sort_ratio(p1r, p2r, true, false) as f64 * UNBASE_SCALE;
     let tser = token_set_ratio(p1r, p2r, true, false) as f64 * UNBASE_SCALE;
-    vec![base as f64, tsor, tser].iter().cloned().fold(0./0., f64::max).round() as u8
+    vec![base as f64, tsor, tser]
+        .iter()
+        .cloned()
+        .fold(0. / 0., f64::max)
+        .round() as u8
 }
 
 pub fn uwratio(s1: &str, s2: &str, full_process: bool) -> u8 {
@@ -249,7 +275,7 @@ mod tests {
         cirque_strings: &'static [&'static str; 6],
         baseball_strings: &'static [&'static str; 4],
     }
-    
+
     impl Fixture {
         pub fn new() -> Self {
             Self {
@@ -273,14 +299,14 @@ mod tests {
                     "cirque du soleil las vegas",
                     "zarkana las vegas",
                     "las vegas cirque du soleil at the bellagio",
-                    "zarakana - cirque du soleil - bellagio"
+                    "zarakana - cirque du soleil - bellagio",
                 ],
                 baseball_strings: &[
                     "new york mets vs chicago cubs",
                     "chicago cubs vs chicago white sox",
                     "philladelphia phillies vs atlanta braves",
                     "braves vs mets",
-                ]
+                ],
             }
         }
     }
@@ -300,7 +326,13 @@ mod tests {
     fn test_case_insensitive() {
         let f = Fixture::new();
         assert_ne!(fuzz::ratio(f.s1, f.s2), 100);
-        assert_eq!(fuzz::ratio(utils::full_process(f.s1, false).as_str(), utils::full_process(f.s2, false).as_str()), 100);
+        assert_eq!(
+            fuzz::ratio(
+                utils::full_process(f.s1, false).as_str(),
+                utils::full_process(f.s2, false).as_str()
+            ),
+            100
+        );
     }
 
     #[test]
@@ -316,8 +348,10 @@ mod tests {
         let f = Fixture::new();
         assert_eq!(fuzz::token_sort_ratio(f.s1, f.s1a, true, true), 100);
         // TODO: These are from the Logan's tests, so testing these scores may not be valid.
-        assert_eq!(fuzz::token_sort_ratio("hello world", "world hello", false, false),
-                   100);
+        assert_eq!(
+            fuzz::token_sort_ratio("hello world", "world hello", false, false),
+            100
+        );
     }
 
     #[test]
@@ -325,10 +359,19 @@ mod tests {
         let f = Fixture::new();
         assert_eq!(fuzz::partial_token_sort_ratio(f.s1, f.s1a, true, true), 100);
         assert_eq!(fuzz::partial_token_sort_ratio(f.s4, f.s5, true, true), 100);
-        assert_eq!(fuzz::partial_token_sort_ratio(f.s8, f.s8a, true, false), 100);
+        assert_eq!(
+            fuzz::partial_token_sort_ratio(f.s8, f.s8a, true, false),
+            100
+        );
         assert_eq!(fuzz::partial_token_sort_ratio(f.s9, f.s9a, true, true), 100);
-        assert_eq!(fuzz::partial_token_sort_ratio(f.s9, f.s9a, true, false), 100);
-        assert_eq!(fuzz::partial_token_sort_ratio(f.s10, f.s10a, true, false), 100);
+        assert_eq!(
+            fuzz::partial_token_sort_ratio(f.s9, f.s9a, true, false),
+            100
+        );
+        assert_eq!(
+            fuzz::partial_token_sort_ratio(f.s10, f.s10a, true, false),
+            100
+        );
     }
 
     #[test]
