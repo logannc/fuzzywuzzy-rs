@@ -370,7 +370,7 @@ mod tests {
         );
         assert_eq!(
             fuzz::partial_token_sort_ratio(f.s10, f.s10a, true, false),
-            100
+            50
         );
     }
 
