@@ -7,7 +7,7 @@
 pub fn full_process(s: &str, force_ascii: bool) -> String {
     let mut result = s.to_string();
     if force_ascii {
-        result = result.chars().filter(|c| c.is_ascii()).collect();
+        result = result.chars().filter(char::is_ascii).collect();
     }
     result = result
         .chars()
