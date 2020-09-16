@@ -19,7 +19,8 @@ where
 {
     let processed_query: String = processor(query, false);
     if processed_query.is_empty() {
-        println!("Applied processor reduces input query to empty string, all comparisons will have score 0. [Query: '{0}']", processed_query.as_str());
+        // TODO: Make warning configurable, instead of being printed by default.
+        // println!("Applied processor reduces input query to empty string, all comparisons will have score 0. [Query: '{0}']", processed_query.as_str());
     }
 
     // TODO: Check if scorer in list of known processor functions to avoid calling utils::full_process multiple times.
