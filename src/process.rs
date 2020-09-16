@@ -23,6 +23,7 @@ where
         // println!("Applied processor reduces input query to empty string, all comparisons will have score 0. [Query: '{0}']", processed_query.as_str());
     }
 
+    // See: https://github.com/logannc/fuzzyrusty/issues/6
     // TODO: Check if scorer in list of known processor functions to avoid calling utils::full_process multiple times.
     // TODO: Only process the query once instead of for every choice.
 
