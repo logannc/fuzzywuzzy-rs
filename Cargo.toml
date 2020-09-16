@@ -2,5 +2,6 @@
 name = "fuzzyrusty"
 version = "0.1.0"
 authors = ["logan"]
+readme="README.md"
 
 [dependencies]
