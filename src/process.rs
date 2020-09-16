@@ -4,16 +4,18 @@
 /// the match and its score. If a dictionary is used, also returns the key for each match.
 ///
 /// TODO: Add support for choices as HashMap<&str, &str>, not only as slice &[&str].
-pub fn extract_without_order<'a, I, T>(
+pub fn extract_without_order<I, T, P, S>(
     query: &str,
     choices: I,
-    processor: &dyn Fn(&str, bool) -> String,
-    scorer: &dyn Fn(&str, &str, bool, bool) -> u8,
+    processor: P,
+    scorer: S,
     score_cutoff: u8,
 ) -> Vec<(String, u8)>
 where
     I: IntoIterator<Item = T>,
     T: AsRef<str>,
+    P: Fn(&str, bool) -> String,
+    S: Fn(&str, &str, bool, bool) -> u8
 {
     let processed_query: String = processor(query, false);
     if processed_query.is_empty() {
@@ -39,16 +41,18 @@ where
 /// This is a convenience method which returns the single best choice.
 ///
 /// TODO: Add support for choices as HashMap<&str, &str>, not only as slice &[&str].
-pub fn extract_one<'a, I, T>(
+pub fn extract_one<I, T, P, S>(
     query: &str,
     choices: I,
-    processor: &dyn Fn(&str, bool) -> String,
-    scorer: &dyn Fn(&str, &str, bool, bool) -> u8,
+    processor: P,
+    scorer: S,
     score_cutoff: u8,
 ) -> Option<(String, u8)>
 where
     I: IntoIterator<Item = T>,
     T: AsRef<str>,
+    P: Fn(&str, bool) -> String,
+    S: Fn(&str, &str, bool, bool) -> u8
 {
     let best = extract_without_order(query, choices, processor, scorer, score_cutoff);
     if best.is_empty() {
