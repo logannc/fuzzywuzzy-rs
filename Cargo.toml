@@ -1,6 +1,7 @@
 [package]
 name = "fuzzyrusty"
 version = "0.1.0"
-authors = ["logan"]
+authors = ["Logan", "Sean"]
+readme="README.md"
 
 [dependencies]
