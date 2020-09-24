@@ -1,4 +1,4 @@
-/// Standalone functions used by the rest of the crate. You might also find them useful.
+//! Standalone functions used by the rest of the crate. You might also find them useful.
 
 /// Used to preprocess strings into 'canonical' forms.
 ///
@@ -15,8 +15,18 @@
 /// assert_eq!(full_process("Ça va?", false), "ça va");
 /// assert_eq!(full_process("Cães danados", false), "cães danados");
 /// assert_eq!(full_process("¬Camarões assados", false), "camarões assados");
-/// assert_eq!(full_process("a¬1ሴ1€耀", false), "a 1ሴ1 耀");
+/// assert_eq!(full_process("a¬4ሴ2€耀", false), "a 4ሴ2 耀");
 /// assert_eq!(full_process("Á", false), "á");
+///
+/// assert_eq!(full_process("Lorem Ipsum", true), "lorem ipsum");
+/// assert_eq!(full_process("C'est la vie", true), "c est la vie");
+/// assert_eq!(full_process("Ça va?", true), "a va");
+/// assert_eq!(full_process("Cães danados", true), "ces danados");
+/// assert_eq!(full_process("¬Camarões assados", true), "camares assados");
+/// // Notice that the filtering of non-ascii values occurs *before* replacing
+/// // non-alphanumeric with whitespace, which changes the result dramatically.
+/// assert_eq!(full_process("a¬4ሴ2€耀", true), "a42");
+/// assert_eq!(full_process("Á", true), "");
 /// ```
 pub fn full_process(s: &str, force_ascii: bool) -> String {
     let mut result = s.to_string();
@@ -32,7 +42,7 @@ pub fn full_process(s: &str, force_ascii: bool) -> String {
 
 /// A vestigial function from the port from Python's fuzzywuzzy.
 ///
-/// We, `fuzzywuzzy-rs`, attempt to maintain identical results with `fuzzywuzzy-py`.
+/// We, [`fuzzywuzzy-rs`](https://github.com/logannc/fuzzywuzzy-rs), attempt to maintain identical results with [`fuzzywuzzy-py`](https://github.com/seatgeek/fuzzywuzzy).
 /// This function has been kept so that if the python version adds constraints, it is easy to propagate.
 ///
 /// It makes sure the string is non-empty.
