@@ -1,5 +1,10 @@
 # fuzzywuzzy-rs
-Fuzzy string matching like a boss. It uses Levenshtein Distance to calculate the differences between sequences in a simple-to-use package.
+> Fuzzy string matching like a boss. It uses Levenshtein Distance to calculate the differences between sequences in a simple-to-use package.
+> [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy)
+
+This is a Rust clone of the python package fuzzywuzzy. We attempt to be 100% compatible with the python version.
+
+At the time of writing, our matching algorithm is based on the difflib implementation results which may, in rare cases, [have slightly different results](https://github.com/seatgeek/fuzzywuzzy/issues/128) compared to the python Levenshtein implementation.
 
 **Note: This project was originally named `fuzzyrusty`. Someone else cloned and published it to crates.io https://crates.io/crates/fuzzyrusty. _We do not control that crate._ This is why we have changed the name.**
 

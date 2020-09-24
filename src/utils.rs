@@ -1,9 +1,23 @@
-/// Process string by
-/// # removing all but letters and numbers
-/// # trim whitespace
-/// # force to lower case
+/// Standalone functions used by the rest of the crate. You might also find them useful.
+
+/// Used to preprocess strings into 'canonical' forms.
 ///
-/// If force_ascii == true, force convert to ascii. By default, this is false.
+/// Process string by
+/// 1. if `force_ascii`, remove non-ascii characters
+/// 2. replace all non-alphanumeric characters with a space
+/// 3. force to lower case
+/// 4. trim whitespace
+///
+/// ```
+/// # use fuzzywuzzy::utils::full_process;
+/// assert_eq!(full_process("Lorem Ipsum", false), "lorem ipsum");
+/// assert_eq!(full_process("C'est la vie", false), "c est la vie");
+/// assert_eq!(full_process("Ça va?", false), "ça va");
+/// assert_eq!(full_process("Cães danados", false), "cães danados");
+/// assert_eq!(full_process("¬Camarões assados", false), "camarões assados");
+/// assert_eq!(full_process("a¬1ሴ1€耀", false), "a 1ሴ1 耀");
+/// assert_eq!(full_process("Á", false), "á");
+/// ```
 pub fn full_process(s: &str, force_ascii: bool) -> String {
     let mut result = s.to_string();
     if force_ascii {
@@ -13,11 +27,21 @@ pub fn full_process(s: &str, force_ascii: bool) -> String {
         .chars()
         .map(|c| if c.is_alphanumeric() { c } else { ' ' })
         .collect();
-    result.make_ascii_lowercase();
-    result.trim().to_string()
+    result.to_lowercase().trim().into()
 }
 
-/// Ensures that the input string is non-empty.
+/// A vestigial function from the port from Python's fuzzywuzzy.
+///
+/// We, `fuzzywuzzy-rs`, attempt to maintain identical results with `fuzzywuzzy-py`.
+/// This function has been kept so that if the python version adds constraints, it is easy to propagate.
+///
+/// It makes sure the string is non-empty.
+///
+/// ```
+/// # use fuzzywuzzy::utils::validate_string;
+/// assert_eq!(validate_string(""), false);
+/// assert_eq!(validate_string("anything else"), true);
+/// ```
 pub fn validate_string(s: &str) -> bool {
     !s.is_empty()
 }
