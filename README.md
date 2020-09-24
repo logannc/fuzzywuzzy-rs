@@ -1,11 +1,23 @@
-# fuzzyrusty
+# fuzzywuzzy-rs
 Fuzzy string matching like a boss. It uses Levenshtein Distance to calculate the differences between sequences in a simple-to-use package.
 
+**Note: This project was originally named `fuzzyrusty`. Someone else cloned and published it to crates.io https://crates.io/crates/fuzzyrusty. _We do not control that crate._ This is why we have changed the name.**
+
 ## Installation 
-`fuzzyrusty` is currently only available through GitHub. Add this to your `Cargo.toml`:
+`fuzzywuzzy` is currently available through GitHub or crates.io.
+
+For the latest stable releas, add this to your `Cargo.toml`:
+
 ```toml
 [dependencies]
-fuzzyrusty = { git = "https://github.com/logannc/fuzzyrusty", branch = "master" }
+fuzzywuzzy = "*"
+```
+
+For the bleeding edge, you can pull directly from master:
+
+```toml
+[dependencies]
+fuzzywuzzy = { git = "https://github.com/logannc/fuzzyrusty", branch = "master" }
 ```
 
 ## Documentation

@@ -1,7 +1,13 @@
 [package]
-name = "fuzzyrusty"
-version = "0.1.0"
+name = "fuzzywuzzy"
+version = "0.0.1"
 authors = ["Logan", "Sean"]
+description = "A pure-Rust clone of the incredibly useful fuzzy string matching python package, FuzzyWuzzy."
+repository = "https://github.com/logannc/fuzzyrusty"
 readme="README.md"
+license = "GPL-2.0-only"
+keywords = ["string", "text", "utility"]
+categories = ["text-processing"]
+
 
 [dependencies]
