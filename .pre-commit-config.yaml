@@ -10,7 +10,7 @@ repos:
       - id: detect-private-key
       - id: no-commit-to-branch
   - repo: https://github.com/doublify/pre-commit-rust
-    rev: master
+    rev: v1.0
     hooks:
       - id: fmt
       - id: cargo-check

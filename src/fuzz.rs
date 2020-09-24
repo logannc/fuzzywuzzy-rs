@@ -109,18 +109,18 @@ fn token_set(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process:
     let intersect_str = intersection.join(" ");
     let diff1to2_str = diff1to2.join(" ");
     let diff2to1_str = diff2to1.join(" ");
-    let combined_1to2 = if diff1to2_str.len() > 0 {
+    let combined_1to2 = if !diff1to2_str.is_empty() {
         intersect_str.to_string() + &diff1to2_str
     } else {
         intersect_str.to_string()
     };
-    let combined_2to1 = if diff2to1_str.len() > 0 {
+    let combined_2to1 = if !diff2to1_str.is_empty() {
         intersect_str.to_string() + &diff2to1_str
     } else {
         intersect_str.to_string()
     };
     if partial {
-        vec![
+        *vec![
             partial_ratio(&intersect_str, &combined_1to2),
             partial_ratio(&intersect_str, &combined_2to1),
             partial_ratio(&combined_1to2, &combined_2to1),
@@ -128,9 +128,8 @@ fn token_set(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process:
         .iter()
         .max()
         .unwrap()
-        .clone()
     } else {
-        vec![
+        *vec![
             ratio(&intersect_str, &combined_1to2),
             ratio(&intersect_str, &combined_2to1),
             ratio(&combined_1to2, &combined_2to1),
@@ -138,7 +137,6 @@ fn token_set(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process:
         .iter()
         .max()
         .unwrap()
-        .clone()
     }
 }
 
@@ -231,7 +229,7 @@ pub fn wratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
         return vec![base as f64, partial, ptsor, ptser]
             .iter()
             .cloned()
-            .fold(0. / 0., f64::max)
+            .fold(f64::NAN, f64::max)
             .round() as u8;
     }
     let tsor = token_sort_ratio(p1r, p2r, true, false) as f64 * UNBASE_SCALE;
@@ -239,7 +237,7 @@ pub fn wratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
     vec![base as f64, tsor, tser]
         .iter()
         .cloned()
-        .fold(0. / 0., f64::max)
+        .fold(f64::NAN, f64::max)
         .round() as u8
 }
 
