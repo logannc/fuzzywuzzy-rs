@@ -15,7 +15,7 @@ where
     I: IntoIterator<Item = T>,
     T: AsRef<str>,
     P: Fn(&str, bool) -> String,
-    S: Fn(&str, &str, bool, bool) -> u8
+    S: Fn(&str, &str, bool, bool) -> u8,
 {
     let processed_query: String = processor(query, false);
     if processed_query.is_empty() {
@@ -54,7 +54,7 @@ where
     I: IntoIterator<Item = T>,
     T: AsRef<str>,
     P: Fn(&str, bool) -> String,
-    S: Fn(&str, &str, bool, bool) -> u8
+    S: Fn(&str, &str, bool, bool) -> u8,
 {
     let best = extract_without_order(query, choices, processor, scorer, score_cutoff);
     if best.is_empty() {

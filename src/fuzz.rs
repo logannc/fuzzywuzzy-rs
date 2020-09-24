@@ -29,11 +29,7 @@ pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
     let blocks = utils::get_matching_blocks(&shorter, &longer);
     let mut max: u8 = 0;
     for (i, j, _) in blocks {
-        let long_start = if j > i {
-            j - i
-        } else {
-            0
-        };
+        let long_start = if j > i { j - i } else { 0 };
         let long_end = std::cmp::min(long_start + shorter.len(), longer.len());
         let long_substr = &longer[long_start..long_end];
         let r = ratio(&shorter, long_substr);
