@@ -17,7 +17,7 @@ For the bleeding edge, you can pull directly from master:
 
 ```toml
 [dependencies]
-fuzzywuzzy = { git = "https://github.com/logannc/fuzzyrusty", branch = "master" }
+fuzzywuzzy = { git = "https://github.com/logannc/fuzzywuzzy-rs", branch = "master" }
 ```
 
 ## Documentation
