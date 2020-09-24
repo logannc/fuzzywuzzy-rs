@@ -1,6 +1,6 @@
 [package]
 name = "fuzzywuzzy"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["Logan", "Sean"]
 description = "A pure-Rust clone of the incredibly useful fuzzy string matching python package, FuzzyWuzzy."
 repository = "https://github.com/logannc/fuzzywuzzy-rs"
