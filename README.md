@@ -1,4 +1,4 @@
-# fuzzywuzzy-rs
+# fuzzywuzzy-rs [![docs.rs badge](https://docs.rs/fuzzywuzzy/badge.svg)](https://docs.rs/fuzzywuzzy) [![crates.io badge](https://img.shields.io/crates/v/fuzzywuzzy.svg)](https://crates.io/crates/fuzzywuzzy)
 > Fuzzy string matching like a boss. It uses Levenshtein Distance to calculate the differences between sequences in a simple-to-use package.
 > [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy)
 
