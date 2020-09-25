@@ -14,7 +14,7 @@ At the time of writing, our matching algorithm is based on the difflib implement
 ## Installation
 `fuzzywuzzy` is currently available through GitHub or crates.io.
 
-For the latest stable releas, add this to your `Cargo.toml`:
+For the latest stable release, add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
@@ -29,7 +29,7 @@ fuzzywuzzy = { git = "https://github.com/logannc/fuzzywuzzy-rs", branch = "maste
 ```
 
 ## Documentation
-Clone the repository and run `$ cargo doc --open`.
+Clone the repository and run `$ cargo doc --open`, or visit [docs.rs](https://docs.rs/crate/fuzzywuzzy/0.0.2).
 
 ## Usage
 ### Simple Ratio
