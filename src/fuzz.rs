@@ -269,6 +269,7 @@ mod tests {
         s3: &'static str,
         s4: &'static str,
         s5: &'static str,
+        #[allow(dead_code)]
         s6: &'static str,
         s7: &'static str,
         s8: &'static str,
@@ -277,8 +278,9 @@ mod tests {
         s9a: &'static str,
         s10: &'static str,
         s10a: &'static str,
-        // TODO: Test silly corner cases,
+        #[allow(dead_code)]
         cirque_strings: &'static [&'static str; 6],
+        #[allow(dead_code)]
         baseball_strings: &'static [&'static str; 4],
     }
 
@@ -422,7 +424,6 @@ mod tests {
 
     #[test]
     fn test_empty_string_score_100() {
-        let f = Fixture::new();
         assert_eq!(fuzz::ratio("", ""), 100);
         assert_eq!(fuzz::partial_ratio("", ""), 100);
     }
