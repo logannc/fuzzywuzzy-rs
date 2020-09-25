@@ -1,9 +1,35 @@
-/// Select the best match in a list or dictionary of choices.
+//! Convenience methods to process fuzzy matching queries for common use cases.
+
+/// Score multiple options against a base query string and return all exceeding a cutoff.
 ///
-/// Find best matches in a list or dictionary of choices, return a generator of tuples containing
-/// the match and its score. If a dictionary is used, also returns the key for each match.
+/// Returns a Vec with the options and their match score if their score is above the cutoff.
+/// Results are configurable using custom text processors and scorers.
+/// Good default choices are `utils::full_process` as the processor, `fuzz:wratio` as the scorer, and zero as the score_cutoff.
 ///
-/// TODO: Add support for choices as HashMap<&str, &str>, not only as slice &[&str].
+/// ```
+/// # use fuzzywuzzy::process::extract_without_order;
+/// # use fuzzywuzzy::fuzz::wratio;
+/// let choices = vec![
+///     "new york mets vs chicago cubs",
+///     "chicago cubs vs chicago white sox",
+///     "philladelphia phillies vs atlanta braves",
+///     "braves vs mets",
+/// ];
+/// let expected_results = vec![
+///    ("new york mets vs chicago cubs".to_string(), 86u8),
+///    ("chicago cubs vs chicago white sox".to_string(), 86u8),
+///    ("philladelphia phillies vs atlanta braves".to_string(), 54u8),
+///    ("braves vs mets".to_string(), 57u8)
+/// ];
+/// assert_eq!(
+///     extract_without_order(
+///         "brave new cubs",
+///         choices,
+///         |s, b| s.into(), // an alternative to full_process.
+///         &wratio,
+///         0),
+///     expected_results);
+/// ```
 pub fn extract_without_order<I, T, P, S>(
     query: &str,
     choices: I,
@@ -38,11 +64,68 @@ where
     results
 }
 
-/// Find the single best match above a score in a list of choices.
+/// Score multiple options against a base query string and return the best one exceeding a cutoff.
 ///
-/// This is a convenience method which returns the single best choice.
+/// This is a convenience method which returns the single best choice from `extract_without_order`.
 ///
-/// TODO: Add support for choices as HashMap<&str, &str>, not only as slice &[&str].
+/// For compatibility with `fuzzywuzzy-py`, if there is a tie for the best choice, the first one is returned.
+/// (This is the opposite of how `Iterator::max_by` works.)
+///
+/// ```
+/// # use fuzzywuzzy::process::extract_one;
+/// use fuzzywuzzy::fuzz::wratio;
+/// use fuzzywuzzy::utils::full_process;
+/// let choices = vec![
+///     "new york mets vs chicago cubs",
+///     "chicago cubs vs chicago white sox",
+///     "philladelphia phillies vs atlanta braves",
+///     "braves vs mets",
+/// ];
+/// assert_eq!(
+///    extract_one("brave new cubs",
+///       choices.iter(),
+///       &full_process,
+///       &wratio,
+///       0).unwrap().0,
+///    choices[0]
+/// );
+/// assert_eq!(
+///    extract_one(
+///       "new york mets at atlanta braves",
+///       choices.iter(),
+///       &full_process,
+///       &wratio,
+///       0).unwrap().0,
+///    choices[3]
+/// );
+/// assert_eq!(
+///    extract_one(
+///       "philadelphia phillies at atlanta braves",
+///       choices.iter(),
+///       &full_process,
+///       &wratio,
+///       0).unwrap().0,
+///    choices[2]
+/// );
+/// assert_eq!(
+///    extract_one(
+///       "atlanta braves at philadelphia phillies",
+///       choices.iter(),
+///       &full_process,
+///       &wratio,
+///       0).unwrap().0,
+///    choices[2]
+/// );
+/// assert_eq!(
+///    extract_one(
+///       "chicago cubs vs new york mets",
+///       choices.iter(),
+///       &full_process,
+///       &wratio,
+///       0).unwrap().0,
+///    choices[0]
+/// );
+/// ```
 pub fn extract_one<I, T, P, S>(
     query: &str,
     choices: I,
@@ -71,66 +154,4 @@ where
         .rev()
         .cloned()
         .max_by(|(_, acc_score), (_, score)| acc_score.cmp(score))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use fuzz;
-    use utils;
-
-    mod process {
-        use super::*;
-
-        fn get_baseball_strings() -> &'static [&'static str] {
-            &[
-                "new york mets vs chicago cubs",
-                "chicago cubs vs chicago white sox",
-                "philladelphia phillies vs atlanta braves",
-                "braves vs mets",
-            ]
-        }
-
-        // Call extract_one, unwrap the option, and return 0th element (the choice).
-        fn unwrap_extract_one_choice(query: &str) -> String {
-            // Specify sane defaults.
-            extract_one(
-                query,
-                get_baseball_strings().iter(),
-                &utils::full_process,
-                &fuzz::wratio,
-                0,
-            )
-            .unwrap()
-            .0
-        }
-
-        #[test]
-        fn test_get_best_choice1() {
-            let query = "new york mets at atlanta braves";
-            let best = unwrap_extract_one_choice(query);
-            assert_eq!(best.as_str(), get_baseball_strings()[3])
-        }
-
-        #[test]
-        fn test_get_best_choice2() {
-            let query = "philadelphia phillies at atlanta braves";
-            let best = unwrap_extract_one_choice(query);
-            assert_eq!(best.as_str(), get_baseball_strings()[2])
-        }
-
-        #[test]
-        fn test_get_best_choice3() {
-            let query = "atlanta braves at philadelphia phillies";
-            let best = unwrap_extract_one_choice(query);
-            assert_eq!(best.as_str(), get_baseball_strings()[2])
-        }
-
-        #[test]
-        fn test_get_best_choice4() {
-            let query = "chicago cubs vs new york mets";
-            let best = unwrap_extract_one_choice(query);
-            assert_eq!(best.as_str(), get_baseball_strings()[0])
-        }
-    }
 }
