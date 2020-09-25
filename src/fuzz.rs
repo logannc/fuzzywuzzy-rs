@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use utils;
 
 pub fn ratio(s1: &str, s2: &str) -> u8 {
+    check_trivial!(s1, s2);
     let (shorter, longer) = if s1.len() <= s2.len() {
         (s1, s2)
     } else {
@@ -21,6 +22,7 @@ pub fn ratio(s1: &str, s2: &str) -> u8 {
 
 /// Return the ratio of the most similar substring as a number between 0 and 100.
 pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
+    check_trivial!(s1, s2);
     let (shorter, longer) = if s1.len() <= s2.len() {
         (s1.to_string(), s2.to_string())
     } else {
@@ -59,6 +61,7 @@ fn process_and_sort(s: &str, force_ascii: bool, full_process: bool) -> String {
 /// # sort those tokens and take ratio of resulting joined strings
 /// # controls for unordered string elements
 fn token_sort(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process: bool) -> u8 {
+    check_trivial!(s1, s2);
     let sorted1 = process_and_sort(s1, force_ascii, full_process);
     let sorted2 = process_and_sort(s2, force_ascii, full_process);
     if partial {
@@ -73,6 +76,7 @@ fn token_sort(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process
 ///
 /// By default, force_ascii and full_process should be true.
 pub fn token_sort_ratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
+    // trivial check omitted because this is a shallow delegator to token_sort which checks.
     token_sort(s1, s2, false, force_ascii, full_process)
 }
 
@@ -81,6 +85,7 @@ pub fn token_sort_ratio(s1: &str, s2: &str, force_ascii: bool, full_process: boo
 ///
 /// By default, force_ascii and full_process should be true.
 pub fn partial_token_sort_ratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
+    // trivial check omitted because this is a shallow delegator to token_sort which checks.
     token_sort(s1, s2, true, force_ascii, full_process)
 }
 
@@ -90,6 +95,7 @@ pub fn partial_token_sort_ratio(s1: &str, s2: &str, force_ascii: bool, full_proc
 ///  # take ratios of those two strings
 ///  # controls for unordered partial matches
 fn token_set(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process: bool) -> u8 {
+    check_trivial!(s1, s2);
     let (p1, p2) = if full_process {
         (
             utils::full_process(s1, force_ascii),
@@ -141,10 +147,12 @@ fn token_set(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process:
 }
 
 pub fn token_set_ratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
+    // trivial check omitted because this is a shallow delegator to token_set which checks.
     token_set(s1, s2, false, force_ascii, full_process)
 }
 
 pub fn partial_token_set_ratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
+    // trivial check omitted because this is a shallow delegator to token_set which checks.
     token_set(s1, s2, true, force_ascii, full_process)
 }
 
@@ -153,6 +161,7 @@ pub fn partial_token_set_ratio(s1: &str, s2: &str, force_ascii: bool, full_proce
 //  Runs utils::full_process on both strings.
 //  Short circuits if either of the strings is empty after processing.
 pub fn qratio(s1: &str, s2: &str, force_ascii: bool) -> u8 {
+    check_trivial!(s1, s2);
     let (p1, p2) = (
         utils::full_process(s1, force_ascii),
         utils::full_process(s2, force_ascii),
@@ -164,6 +173,7 @@ pub fn qratio(s1: &str, s2: &str, force_ascii: bool) -> u8 {
 }
 
 pub fn uqratio(s1: &str, s2: &str) -> u8 {
+    // trivial check omitted because this is a shallow delegator to qratio which checks.
     qratio(s1, s2, false)
 }
 
@@ -189,6 +199,7 @@ pub fn uqratio(s1: &str, s2: &str) -> u8 {
 /// #. Take the highest value from these results
 ///    round it and return it as an integer.
 pub fn wratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
+    check_trivial!(s1, s2);
     let (p1, p2) = if full_process {
         (
             utils::full_process(s1, force_ascii),
@@ -242,6 +253,7 @@ pub fn wratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
 }
 
 pub fn uwratio(s1: &str, s2: &str, full_process: bool) -> u8 {
+    // trivial check omitted because this is a shallow delegator to wratio which checks.
     wratio(s1, s2, false, full_process)
 }
 

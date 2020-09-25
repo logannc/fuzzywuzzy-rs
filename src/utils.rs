@@ -90,6 +90,18 @@ fn find_longest_match<'a>(
     (low1, low2, 0)
 }
 
+/// Returns list of triples describing matching sequences.
+///
+/// The first number is the index in the first string of the beginning of the match.
+/// The second number is the index of the second string of the beginning of the match.
+/// The final number is the length of the match.
+///
+/// The final matching sequence will be a trivial matching sequence of (a.len(), b.len(), 0) and will be the only match of length 0.
+///
+/// ```
+/// # use fuzzywuzzy::utils::get_matching_blocks;
+/// assert_eq!(get_matching_blocks("abxcd", "abcd"), vec![(0, 0, 2), (3, 2, 2), (5, 4, 0)]);
+/// ```
 pub fn get_matching_blocks<'a>(shorter: &'a str, longer: &'a str) -> Vec<(usize, usize, usize)> {
     // https://github.com/python-git/python/blob/master/Lib/difflib.py#L461
     let (len1, len2) = (shorter.len(), longer.len());
@@ -127,4 +139,18 @@ pub fn get_matching_blocks<'a>(shorter: &'a str, longer: &'a str) -> Vec<(usize,
     }
     non_adjacent.push((len1, len2, 0));
     non_adjacent
+}
+
+/// some common short circuiting for ratio finding functions.
+/// If the strings are equal, they have a ratio of 100%.
+/// If only one of the strings is empty, they have a ratio of 0%.
+macro_rules! check_trivial {
+    ($s1:expr, $s2:expr) => {
+        if $s1 == $s2 {
+            return 100;
+        }
+        if $s1.is_empty() ^ $s2.is_empty() {
+            return 0;
+        }
+    };
 }
