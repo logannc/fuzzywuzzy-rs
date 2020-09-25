@@ -2,7 +2,7 @@
 > Fuzzy string matching like a boss. It uses Levenshtein Distance to calculate the differences between sequences in a simple-to-use package.
 > [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy)
 
-This is a Rust clone of the python package fuzzywuzzy. We attempt to be 100% compatible with the python version.
+This is a Rust port of the Python package fuzzywuzzy. We aim to be drop-in replacement for the original.
 
 At the time of writing, our matching algorithm is based on the difflib implementation results which may, in rare cases, [have slightly different results](https://github.com/seatgeek/fuzzywuzzy/issues/128) compared to the python Levenshtein implementation.
 
