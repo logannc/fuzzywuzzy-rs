@@ -2,6 +2,9 @@
 
 use std::cmp::Ordering;
 
+/// All of the convenience methods in the `process` module return thresholded _matches_. A match
+/// is a set of text which was matched from the list of choices by the provided scoring function,
+/// along with the score produced by the scoring function.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Match {
     text: String,
@@ -25,6 +28,7 @@ impl Match {
     }
 }
 
+/// Match ordinality is defined by integer ordinality rules applied on the matches' scores.
 impl Ord for Match {
     fn cmp(&self, other: &Self) -> Ordering {
         self.score.cmp(&other.score())
@@ -37,12 +41,14 @@ impl PartialOrd for Match {
     }
 }
 
+/// Convenience trait `impl` for converting `("text", 100)` to `Match { text: "text".into(), score: 100 }`.
 impl<V: AsRef<str>> From<(V, u8)> for Match {
     fn from((text, score): (V, u8)) -> Self {
         Self::new(text, score)
     }
 }
 
+/// Convenience trait `impl` for comparing `("text", 100)` with `Match { text: "text".into(), score: 100 }`.
 impl<V: AsRef<str>> PartialEq<(V, u8)> for Match {
     fn eq(&self, other: &(V, u8)) -> bool {
         let other_choice = Match::new(other.0.as_ref(), other.1);
