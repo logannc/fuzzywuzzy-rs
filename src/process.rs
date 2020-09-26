@@ -1,6 +1,8 @@
 //! Convenience methods to process fuzzy matching queries for common use cases.
 
 use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashSet};
+use utils::full_process;
 
 /// All of the convenience methods in the `process` module return thresholded _matches_. A match
 /// is a set of text which was matched from the list of choices by the provided scoring function,
@@ -212,4 +214,175 @@ where
         .rev()
         .cloned()
         .max_by(|acc_match, other_match| acc_match.score().cmp(&other_match.score()))
+
+}
+
+/// Select the best match in a list or dictionary of choices.
+///
+/// Find best matches in a list or dictionary of choices, return a list of
+/// tuples containing the match and its score. If a dictionary is used, also
+/// returns the key for each match.
+///
+/// ```
+/// # use fuzzywuzzy::process::extract;
+/// # use fuzzywuzzy::fuzz::wratio;
+/// # use fuzzywuzzy::utils::full_process;
+/// let choices = vec![
+///     "train",
+///     "man",
+/// ];
+/// let expected_results = vec![
+///     ("train", 22),
+///     ("man", 0),
+/// ];
+/// assert_eq!(extract("bird", choices, full_process, &wratio, 0, None), expected_results);
+/// ```
+pub fn extract<I, T, P, S, Q>(
+    query: Q,
+    choices: I,
+    processor: P,
+    scorer: S,
+    score_cutoff: u8,
+    limit: Option<u64>,
+) -> Vec<Match>
+where
+    I: IntoIterator<Item = T>,
+    T: AsRef<str>,
+    Q: AsRef<str>,
+    P: Fn(&str, bool) -> String,
+    S: Fn(&str, &str, bool, bool) -> u8,
+{
+    let mut matches = extract_without_order(query, choices, processor, scorer, score_cutoff);
+    match limit {
+        None => {
+            // Merge-sorts the matches.
+            matches.sort();
+            // TODO: Does this need to be reversed? It is reversed in the original implementation.
+            // https://github.com/seatgeek/fuzzywuzzy/blob/master/fuzzywuzzy/process.py#L169
+            matches.reverse();
+            matches
+        }
+        Some(limit) => BinaryHeap::from(matches)
+            .into_sorted_vec()
+            .into_iter()
+            .take(limit as usize)
+            .collect(),
+    }
+}
+
+// TODO: Is there any difference between extract_bests and extract?
+// pub fn extract_bests<I, T, P, S, Q>(
+//     query: Q,
+//     choices: I,
+//     processor: P,
+//     scorer: S,
+//     score_cutoff: u8,
+//     limit: Option<u64>,
+// ) -> Vec<Match>
+// where
+//     I: IntoIterator<Item = T>,
+//     T: AsRef<str>,
+//     Q: AsRef<str>,
+//     P: Fn(&str, bool) -> String,
+//     S: Fn(&str, &str, bool, bool) -> u8,
+// {
+//     let mut matches = extract_without_order(query, choices, processor, scorer, score_cutoff);
+//     match limit {
+//         None => {
+//             // Merge-sorts the matches.
+//             matches.sort();
+//             // TODO: Does this need to be reversed? It is reversed in the original implementation.
+//             // https://github.com/seatgeek/fuzzywuzzy/blob/master/fuzzywuzzy/process.py#L169
+//             matches.reverse();
+//             matches
+//         }
+//         Some(limit) => BinaryHeap::from(matches)
+//             .into_sorted_vec()
+//             .into_iter()
+//             .take(limit as usize)
+//             .collect(),
+//     }
+// }
+
+/// This convenience function takes a list of strings containing duplicates and uses fuzzy matching
+/// to identify and remove duplicates. Specifically, it uses the process.extract to identify
+/// duplicates that score greater than a user defined threshold. Then, it looks for the longest item
+/// in the duplicate list since we assume this item contains the most entity information and returns
+/// that. It breaks string length ties on an alphabetical sort.
+///
+/// NOTE: as the threshold DECREASES the number of duplicates that are found INCREASES. This means
+/// that the returned deduplicated list will likely be shorter. Raise the threshold for fuzzy_dedupe
+/// to be less sensitive.
+///
+/// Returns a de-duplicated list.
+/// ```
+/// # use fuzzywuzzy::process::dedupe;
+/// # use fuzzywuzzy::fuzz::token_set_ratio;
+/// let contains_dupes = vec![
+///     "Frodo Baggin",
+///     "Frodo Baggins",
+///     "F. Baggins",
+///     "Samwise G.",
+///     "Gandalf",
+///     "Bilbo Baggins",
+/// ];
+/// let expected_results = vec![
+///     "Frodo Baggins",
+///     "Samwise G.",
+///     "Bilbo Baggins",
+///     "Gandalf",
+/// ];
+/// assert_eq!(dedupe(contains_dupes, 70, &token_set_ratio, 0, None), expected_results);
+/// ```
+pub fn dedupe<T, I, S>(
+    contains_dupes: I,
+    threshold: u8,
+    scorer: S,
+    score_cutoff: u8,
+    limit: Option<u64>,
+) -> Vec<String>
+where
+    T: AsRef<str>,
+    I: IntoIterator<Item = T>,
+    S: Fn(&str, &str, bool, bool) -> u8,
+{
+    let mut extractor = Vec::new();
+    let contains_dupes = contains_dupes.into_iter().collect::<Vec<T>>();
+    for item in &contains_dupes {
+        let mut matches: Vec<Match> = extract(
+            item,
+            &contains_dupes,
+            full_process,
+            &scorer,
+            score_cutoff,
+            limit,
+        )
+        .into_iter()
+        .filter(|m| m.score() > threshold)
+        .collect();
+
+        if matches.len() != 1 {
+            // Sort alphabetically
+            matches.sort_by(|lhs, rhs| lhs.text.cmp(&rhs.text));
+            // Sort by descending length.
+            matches.sort_by(|lhs, rhs| lhs.text.len().cmp(&rhs.text.len()));
+            // The first match is now the "canonical example".
+        }
+
+        extractor.push(matches[0].text.clone())
+    }
+
+    // "Unique-ify the extracted matches.
+    let extractor: HashSet<String> = extractor.into_iter().map(String::from).collect();
+
+    // Check that the extracted matches differ from contain_dupes (e.g. duplicates were found).
+    // If not, then return the original list.
+    if extractor.len() == contains_dupes.len() {
+        contains_dupes
+            .into_iter()
+            .map(|x| x.as_ref().into())
+            .collect()
+    } else {
+        extractor.into_iter().collect()
+    }
 }
