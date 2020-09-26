@@ -3,9 +3,8 @@
 [![docs.rs badge](https://docs.rs/fuzzywuzzy/badge.svg)](https://docs.rs/fuzzywuzzy) [![crates.io badge](https://img.shields.io/crates/v/fuzzywuzzy.svg)](https://crates.io/crates/fuzzywuzzy)
 
 > Fuzzy string matching like a boss. It uses Levenshtein Distance to calculate the differences between sequences in a simple-to-use package.
-> [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy)
 
-This is a Rust port of the Python package fuzzywuzzy. We aim to be a drop-in replacement for the original.
+This is a Rust port of the Python package [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy). We aim to be a drop-in replacement for the original.
 
 At the time of writing, our matching algorithm is based on the difflib implementation results which may, in rare cases, [have slightly different results](https://github.com/seatgeek/fuzzywuzzy/issues/128) compared to the Python Levenshtein implementation.
 
