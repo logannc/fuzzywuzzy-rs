@@ -7,9 +7,9 @@
 
 This is a Rust port of the Python package fuzzywuzzy. We aim to be a drop-in replacement for the original.
 
-At the time of writing, our matching algorithm is based on the difflib implementation results which may, in rare cases, [have slightly different results](https://github.com/seatgeek/fuzzywuzzy/issues/128) compared to the python Levenshtein implementation.
+At the time of writing, our matching algorithm is based on the difflib implementation results which may, in rare cases, [have slightly different results](https://github.com/seatgeek/fuzzywuzzy/issues/128) compared to the Python Levenshtein implementation.
 
-**Note: This project was originally named `fuzzyrusty`. Someone else cloned and published it to crates.io https://crates.io/crates/fuzzyrusty. _We do not control that crate._ This is why we have changed the name.**
+**Note: This project was originally named `fuzzyrusty`. Someone else cloned and [published it to crates.io](https://crates.io/crates/fuzzyrusty). _We do not control that crate._ This is why we have changed the name.**
 
 ## Installation
 `fuzzywuzzy` is currently available through GitHub or crates.io.
