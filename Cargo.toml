@@ -6,7 +6,7 @@ description = "A pure-Rust clone of the incredibly useful fuzzy string matching 
 repository = "https://github.com/logannc/fuzzywuzzy-rs"
 readme="README.md"
 license = "GPL-2.0-only"
-keywords = ["string", "text", "utility"]
+keywords = ["string", "text", "processing", "matching", "fuzzy"]
 categories = ["text-processing"]
 
 
