@@ -102,7 +102,15 @@ fn find_longest_match<'a>(
 /// # use fuzzywuzzy::utils::get_matching_blocks;
 /// assert_eq!(get_matching_blocks("abxcd", "abcd"), vec![(0, 0, 2), (3, 2, 2), (5, 4, 0)]);
 /// ```
-pub fn get_matching_blocks<'a>(shorter: &'a str, longer: &'a str) -> Vec<(usize, usize, usize)> {
+pub fn get_matching_blocks<'a>(a: &'a str, b: &'a str) -> Vec<(usize, usize, usize)> {
+    let flipped;
+    let (shorter, longer) = if a.len() <= b.len() {
+        flipped = false;
+        (a, b)
+    } else {
+        flipped = true;
+        (b, a)
+    };
     // https://github.com/python-git/python/blob/master/Lib/difflib.py#L461
     let (len1, len2) = (shorter.len(), longer.len());
     let mut queue: Vec<(usize, usize, usize, usize)> = vec![(0, len1, 0, len2)];
@@ -139,6 +147,9 @@ pub fn get_matching_blocks<'a>(shorter: &'a str, longer: &'a str) -> Vec<(usize,
     }
     non_adjacent.push((len1, len2, 0));
     non_adjacent
+        .into_iter()
+        .map(|(i, j, k)| if flipped { (j, i, k) } else { (i, j, k) })
+        .collect()
 }
 
 /// some common short circuiting for ratio finding functions.
