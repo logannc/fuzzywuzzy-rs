@@ -1,18 +1,35 @@
+//! Fuzzy string matching scoring primitives.
+
 use std::collections::HashSet;
 use utils;
 
-pub fn ratio(s1: &str, s2: &str) -> u8 {
-    check_trivial!(s1, s2);
-    let (shorter, longer) = if s1.len() <= s2.len() {
-        (s1, s2)
-    } else {
-        (s2, s1)
-    };
-    let matches: usize = utils::get_matching_blocks(shorter, longer)
+/// Returns the ratio of the length of matching character sequences to the sum of the length of the input strings.
+///
+/// Take, for example, `"cd"` and `"abcd"`.
+/// The matching sequence is `"cd"` with a length of 2.
+///
+/// It is present in both strings, so we count it twice for a total length of matching character sequences of 4.
+///
+/// The sum of the length of the input strings is `"abcd".len() (4) + "cd".len() (2) = 6`.
+///
+/// Therefore the returned value is `(4f32/6f32).round() = 67`
+///
+/// ```
+/// # use fuzzywuzzy::fuzz::ratio;
+/// assert_eq!(ratio("", ""), 100);
+/// assert_eq!(ratio("", "nonempty"), 0);
+/// assert_eq!(ratio("cd", "abcd"), 67);
+/// assert_eq!(ratio("new york mets", "new york mets"), 100);
+/// assert_eq!(ratio("new york mets", "new YORK mets"), 69);
+/// assert_eq!(ratio("hello test", "hello world"), 57);
+/// ```
+pub fn ratio(a: &str, b: &str) -> u8 {
+    check_trivial!(a, b);
+    let matches: usize = utils::get_matching_blocks(a, b)
         .iter()
         .map(|&(_, _, s)| s)
         .sum();
-    let sumlength: f32 = (s1.len() + s2.len()) as f32;
+    let sumlength: f32 = (a.len() + b.len()) as f32;
     if sumlength > 0.0 {
         (100.0 * (2.0 * (matches as f32) / sumlength)).round() as u8
     } else {
@@ -21,20 +38,42 @@ pub fn ratio(s1: &str, s2: &str) -> u8 {
 }
 
 /// Return the ratio of the most similar substring as a number between 0 and 100.
+///
+/// The most similar substring is determined by finding the optimal alignment
+/// of the two strings. Then the similarity ratio of the aligned strings is returned.
+///
+/// ```
+/// # use fuzzywuzzy::fuzz::partial_ratio;
+/// assert_eq!(partial_ratio("", ""), 100);
+/// assert_eq!(partial_ratio("", "nonempty"), 0);
+/// assert_eq!(partial_ratio("ab", "abcd"), 100);
+/// assert_eq!(partial_ratio("bc", "abcd"), 100);
+/// assert_eq!(partial_ratio("cd", "abcd"), 100);
+/// assert_eq!(partial_ratio("ad", "abcd"), 50);
+/// assert_eq!(partial_ratio("ac", "abcd"), 50);
+/// assert_eq!(partial_ratio("hello", "hello world"), 100);
+/// assert_eq!(partial_ratio("new york mets", "the new york mets"), 100);
+/// assert_eq!(partial_ratio("the new york mets", "new york mets"), 100);
+/// assert_eq!(partial_ratio(
+///    "what about supercalifragilisticexpialidocious",
+///    "supercalifragilisticexpialidocious about what"), 76);
+/// ```
 pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
     check_trivial!(s1, s2);
+    // TODO: how does this compare to local alignment via smith-waterman?
+    // TODO: I no longer remember what get_matching_blocks implements, specifically. Are we properly aligning below?
     let (shorter, longer) = if s1.len() <= s2.len() {
-        (s1.to_string(), s2.to_string())
+        (s1, s2)
     } else {
-        (s2.to_string(), s1.to_string())
+        (s2, s1)
     };
-    let blocks = utils::get_matching_blocks(&shorter, &longer);
+    let blocks = utils::get_matching_blocks(shorter, longer);
     let mut max: u8 = 0;
     for (i, j, _) in blocks {
         let long_start = if j > i { j - i } else { 0 };
         let long_end = std::cmp::min(long_start + shorter.len(), longer.len());
         let long_substr = &longer[long_start..long_end];
-        let r = ratio(&shorter, long_substr);
+        let r = ratio(shorter, long_substr);
         if r > 99 {
             return 100;
         } else if r > max {
