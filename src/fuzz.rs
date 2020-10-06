@@ -39,8 +39,11 @@ pub fn ratio(a: &str, b: &str) -> u8 {
 
 /// Return the ratio of the most similar substring as a number between 0 and 100.
 ///
-/// The most similar substring is determined by finding the optimal alignment
+/// The most similar substring is determined by finding the "optimal" alignment
 /// of the two strings. Then the similarity ratio of the aligned strings is returned.
+///
+/// Note: in compatibility with fuzzywuzzy, a suboptimal sequence alignment
+/// algorithm is used. In future versions, this may change.
 ///
 /// ```
 /// # use fuzzywuzzy::fuzz::partial_ratio;
@@ -54,14 +57,16 @@ pub fn ratio(a: &str, b: &str) -> u8 {
 /// assert_eq!(partial_ratio("hello", "hello world"), 100);
 /// assert_eq!(partial_ratio("new york mets", "the new york mets"), 100);
 /// assert_eq!(partial_ratio("the new york mets", "new york mets"), 100);
+/// // Note the order dependence due to not finding the optimal alignment
 /// assert_eq!(partial_ratio(
 ///    "what about supercalifragilisticexpialidocious",
 ///    "supercalifragilisticexpialidocious about what"), 76);
+/// assert_eq!(partial_ratio(
+///    "supercalifragilisticexpialidocious about what",
+///    "what about supercalifragilisticexpialidocious"), 86);
 /// ```
 pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
     check_trivial!(s1, s2);
-    // TODO: how does this compare to local alignment via smith-waterman?
-    // TODO: I no longer remember what get_matching_blocks implements, specifically. Are we properly aligning below?
     let (shorter, longer) = if s1.len() <= s2.len() {
         (s1, s2)
     } else {
@@ -113,16 +118,41 @@ fn token_sort(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process
 /// Return a measure of the sequences' similarity between 0 and 100, but sort the token before
 /// comparing.
 ///
+/// This essentially sorts 'words' in each string and then runs `ratio`.
+///
 /// By default, force_ascii and full_process should be true.
+///
+/// ```
+/// # use fuzzywuzzy::fuzz::token_sort_ratio;
+/// assert_eq!(token_sort_ratio("hello world", "world hello", true, true), 100);
+/// assert_eq!(token_sort_ratio("new york mets", "the new york mets", true, true), 87);
+/// assert_eq!(token_sort_ratio("new york mets", "new YORK mets", true, true), 100);
+/// assert_eq!(token_sort_ratio(
+///    "what about supercalifragilisticexpialidocious",
+///    "supercalifragilisticexpialidocious about what", true, true), 100);
+/// ```
 pub fn token_sort_ratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
     // trivial check omitted because this is a shallow delegator to token_sort which checks.
     token_sort(s1, s2, false, force_ascii, full_process)
 }
 
-/// Return the ratio of the most similar substring as a number between 0 and 100, but sort the token
+/// Return the ratio of the most similar substring as a number between 0 and 100, but sort the tokens
 /// before comparing.
 ///
+/// This essentially sorts 'words' in each string and then runs `partial_ratio`.
+///
 /// By default, force_ascii and full_process should be true.
+///
+/// ```
+/// # use fuzzywuzzy::fuzz::partial_token_sort_ratio;
+/// assert_eq!(partial_token_sort_ratio("hello world", "world hello", true, true), 100);
+/// assert_eq!(partial_token_sort_ratio("new york mets", "the new york mets", true, true), 69);
+/// assert_eq!(partial_token_sort_ratio("new york mets", "new YORK mets", true, true), 100);
+/// assert_eq!(partial_token_sort_ratio("new york mets vs atlanta braves", "atlanta braves vs new york mets", true, true), 100);
+/// assert_eq!(partial_token_sort_ratio(
+///    "what about supercalifragilisticexpialidocious",
+///    "supercalifragilisticexpialidocious about what", true, true), 100);
+/// ```
 pub fn partial_token_sort_ratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
     // trivial check omitted because this is a shallow delegator to token_sort which checks.
     token_sort(s1, s2, true, force_ascii, full_process)
@@ -155,12 +185,12 @@ fn token_set(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process:
     let diff1to2_str = diff1to2.join(" ");
     let diff2to1_str = diff2to1.join(" ");
     let combined_1to2 = if !diff1to2_str.is_empty() {
-        intersect_str.to_string() + &diff1to2_str
+        intersect_str.to_string() + " " + &diff1to2_str
     } else {
         intersect_str.to_string()
     };
     let combined_2to1 = if !diff2to1_str.is_empty() {
-        intersect_str.to_string() + &diff2to1_str
+        intersect_str.to_string() + " " + &diff2to1_str
     } else {
         intersect_str.to_string()
     };
@@ -185,17 +215,59 @@ fn token_set(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process:
     }
 }
 
+/// Return the ratio of the most similar substring constructed from the strings treated as sets, as a number between 0 and 100.
+///
+/// Creates three sets from the two strings:
+///  1. a sorted set containing words in both strings, joined by spaces
+///  2. a sorted set containing words in both strings followed by words only in the first string, joined by spaces
+///  3. a sorted set containing words in both strings followed by words only in the second string, joined by spaces
+///
+/// Note: the set of words in the intersection and difference are sorted before being concatenated and joined by spaces.
+///
+/// The ratio is computed between all three, pairwise, and the maximum is returned.
+///
+/// ```
+/// # use fuzzywuzzy::fuzz::token_set_ratio;
+/// assert_eq!(token_set_ratio("hello world", "world hello", true, true), 100);
+/// assert_eq!(token_set_ratio("new york mets", "the new york mets", true, true), 100);
+/// assert_eq!(token_set_ratio("new york mets", "new YORK mets", true, true), 100);
+/// assert_eq!(token_set_ratio("new york mets vs atlanta braves", "atlanta braves vs new york mets", true, true), 100);
+/// assert_eq!(token_set_ratio(
+///    "what about supercalifragilisticexpialidocious",
+///    "supercalifragilisticexpialidocious about what", true, true), 100);
+/// ```
 pub fn token_set_ratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
     // trivial check omitted because this is a shallow delegator to token_set which checks.
     token_set(s1, s2, false, force_ascii, full_process)
 }
 
+/// Return the partial ratio of the most similar substring constructed from the strings treated as sets, as a number between 0 and 100.
+///
+/// Creates three sets from the two strings:
+///  1. a sorted set containing words in both strings, joined by spaces
+///  2. a sorted set containing words in both strings followed by words only in the first string, joined by spaces
+///  3. a sorted set containing words in both strings followed by words only in the second string, joined by spaces
+///
+/// Note: the set of words in the intersection and difference are sorted before being concatenated and joined by spaces.
+///
+/// The partial ratio is computed between all three, pairwise, and the maximum is returned.
+///
+/// ```
+/// # use fuzzywuzzy::fuzz::partial_token_set_ratio;
+/// assert_eq!(partial_token_set_ratio("hello world", "world hello", true, true), 100);
+/// assert_eq!(partial_token_set_ratio("new york mets", "the new york mets", true, true), 100);
+/// assert_eq!(partial_token_set_ratio("new york mets", "new YORK mets", true, true), 100);
+/// assert_eq!(partial_token_set_ratio("new york mets - atlanta braves", "atlanta braves - new york city mets", true, true), 100);
+/// assert_eq!(partial_token_set_ratio(
+///    "what about supercalifragilisticexpialidocious",
+///    "supercalifragilisticexpialidocious about what", true, true), 100);
+/// ```
 pub fn partial_token_set_ratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
     // trivial check omitted because this is a shallow delegator to token_set which checks.
     token_set(s1, s2, true, force_ascii, full_process)
 }
 
-/// Quick ratio comparison between two strings.
+/// Quick `ratio` comparison between two strings.
 ///
 //  Runs utils::full_process on both strings.
 //  Short circuits if either of the strings is empty after processing.
@@ -211,32 +283,45 @@ pub fn qratio(s1: &str, s2: &str, force_ascii: bool) -> u8 {
     ratio(&p1, &p2)
 }
 
+/// micro-quick-ratio: `qratio` comparison between two strings without forcing to ascii.
 pub fn uqratio(s1: &str, s2: &str) -> u8 {
     // trivial check omitted because this is a shallow delegator to qratio which checks.
     qratio(s1, s2, false)
 }
 
-/// Return a measure of the sequences' similarity between 0 and 100, using different algorithms.
+/// Return a measure of the sequences' similarity between 0 and 100, using a composite algorithm.
 ///
-/// ** Steps in the order they occur **
-/// #. Run full_process from utils on both strings
-/// #. Short circuit if this makes either string empty
-/// #. Take the ratio of the two processed strings (fuzz.ratio)
-/// #. Run checks to compare the length of the strings
+/// *Steps in the order they occur*
+///  1. Run full_process from utils on both strings
+///  2. Short circuit if this makes either string empty
+///  3. Take the ratio of the two processed strings (`fuzz::ratio`)
+///  4. Run checks to compare the length of the strings
 ///     * If one of the strings is more than 1.5 times as long as the other
 ///       use partial_ratio comparisons - scale partial results by 0.9
 ///       (this makes sure only full results can return 100)
 ///     * If one of the strings is over 8 times as long as the other
 ///       instead scale by 0.6
-/// #. Run the other ratio functions
+///  5. Run the other ratio functions
 ///     * if using partial ratio functions call partial_ratio,
 ///       partial_token_sort_ratio and partial_token_set_ratio
 ///       scale all of these by the ratio based on length
 ///     * otherwise call token_sort_ratio and token_set_ratio
 ///     * all token based comparisons are scaled by 0.95
 ///       (on top of any partial scalars)
-/// #. Take the highest value from these results
-///    round it and return it as an integer.
+///  6. Take the highest value from these results
+///     round it and return it as an integer.
+///
+/// TODO: function is hard-coded to use partial functions?
+///
+/// ```
+/// # use fuzzywuzzy::fuzz::wratio;
+/// assert_eq!(wratio("", "", true, true), 100);
+/// assert_eq!(wratio("hello world", "hello world", true, true), 100);
+/// assert_eq!(wratio("hello world", "world hello", true, true), 95);
+/// assert_eq!(wratio("new york mets", "new YORK mets", true, true), 100);
+/// assert_eq!(wratio("new york mets", "the wonderful new york mets", true, true), 90);
+/// assert_eq!(wratio("new york mets vs atlanta braves", "atlanta braves vs new york mets", true, true), 95);
+/// ```
 pub fn wratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
     check_trivial!(s1, s2);
     let (p1, p2) = if full_process {
@@ -291,179 +376,8 @@ pub fn wratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
         .round() as u8
 }
 
+/// Runs `wratio` without forcing to ascii.
 pub fn uwratio(s1: &str, s2: &str, full_process: bool) -> u8 {
     // trivial check omitted because this is a shallow delegator to wratio which checks.
     wratio(s1, s2, false, full_process)
-}
-
-#[cfg(test)]
-mod tests {
-    use fuzz;
-    use utils;
-
-    struct Fixture {
-        s1: &'static str,
-        s1a: &'static str,
-        s2: &'static str,
-        s3: &'static str,
-        s4: &'static str,
-        s5: &'static str,
-        #[allow(dead_code)]
-        s6: &'static str,
-        s7: &'static str,
-        s8: &'static str,
-        s8a: &'static str,
-        s9: &'static str,
-        s9a: &'static str,
-        s10: &'static str,
-        s10a: &'static str,
-        #[allow(dead_code)]
-        cirque_strings: &'static [&'static str; 6],
-        #[allow(dead_code)]
-        baseball_strings: &'static [&'static str; 4],
-    }
-
-    impl Fixture {
-        pub fn new() -> Self {
-            Self {
-                s1: "new york mets",
-                s1a: "new york mets",
-                s2: "new YORK mets",
-                s3: "the wonderful new york mets",
-                s4: "new york mets vs atlanta braves",
-                s5: "atlanta braves vs new york mets",
-                s6: "new york mets - atlanta braves",
-                s7: "new york city mets - atlanta braves",
-                s8: "{",
-                s8a: "{",
-                s9: "{a",
-                s9a: "{a",
-                s10: "a{",
-                s10a: "{b",
-                cirque_strings: &[
-                    "cirque du soleil - zarkana - las vegas",
-                    "cirque du soleil ",
-                    "cirque du soleil las vegas",
-                    "zarkana las vegas",
-                    "las vegas cirque du soleil at the bellagio",
-                    "zarakana - cirque du soleil - bellagio",
-                ],
-                baseball_strings: &[
-                    "new york mets vs chicago cubs",
-                    "chicago cubs vs chicago white sox",
-                    "philladelphia phillies vs atlanta braves",
-                    "braves vs mets",
-                ],
-            }
-        }
-    }
-
-    #[test]
-    fn test_equal() {
-        let f = Fixture::new();
-        assert_eq!(fuzz::ratio(f.s1, f.s1a), 100);
-        assert_eq!(fuzz::ratio(f.s8, f.s8a), 100);
-        assert_eq!(fuzz::ratio(f.s9, f.s9a), 100);
-        // TODO: These are from the Logan's tests, so testing these scores may not be valid.
-        assert_eq!(fuzz::ratio("hello test", "hello world"), 57);
-        assert_eq!(fuzz::ratio("hello test", "hello worlasdfasd"), 52);
-    }
-
-    #[test]
-    fn test_case_insensitive() {
-        let f = Fixture::new();
-        assert_ne!(fuzz::ratio(f.s1, f.s2), 100);
-        assert_eq!(
-            fuzz::ratio(
-                utils::full_process(f.s1, false).as_str(),
-                utils::full_process(f.s2, false).as_str()
-            ),
-            100
-        );
-    }
-
-    #[test]
-    fn test_partial_ratio() {
-        let f = Fixture::new();
-        assert_eq!(fuzz::partial_ratio(f.s1, f.s3), 100);
-        // TODO: These are from the Logan's tests, so testing these scores may not be valid.
-        assert_eq!(fuzz::partial_ratio("hello", "hello world"), 100);
-    }
-
-    #[test]
-    fn test_token_sort_ratio() {
-        let f = Fixture::new();
-        assert_eq!(fuzz::token_sort_ratio(f.s1, f.s1a, true, true), 100);
-        // TODO: These are from the Logan's tests, so testing these scores may not be valid.
-        assert_eq!(
-            fuzz::token_sort_ratio("hello world", "world hello", false, false),
-            100
-        );
-    }
-
-    #[test]
-    fn test_partial_token_sort_ratio() {
-        let f = Fixture::new();
-        assert_eq!(fuzz::partial_token_sort_ratio(f.s1, f.s1a, true, true), 100);
-        assert_eq!(fuzz::partial_token_sort_ratio(f.s4, f.s5, true, true), 100);
-        assert_eq!(
-            fuzz::partial_token_sort_ratio(f.s8, f.s8a, true, false),
-            100
-        );
-        assert_eq!(fuzz::partial_token_sort_ratio(f.s9, f.s9a, true, true), 100);
-        assert_eq!(
-            fuzz::partial_token_sort_ratio(f.s9, f.s9a, true, false),
-            100
-        );
-        assert_eq!(
-            fuzz::partial_token_sort_ratio(f.s10, f.s10a, true, false),
-            50
-        );
-    }
-
-    #[test]
-    fn test_token_set_ratio() {
-        let f = Fixture::new();
-        assert_eq!(fuzz::token_set_ratio(f.s4, f.s5, true, true), 100);
-        assert_eq!(fuzz::token_set_ratio(f.s8, f.s8a, true, false), 100);
-        assert_eq!(fuzz::token_set_ratio(f.s9, f.s9a, true, true), 100);
-        assert_eq!(fuzz::token_set_ratio(f.s9, f.s9a, true, false), 100);
-        assert_eq!(fuzz::token_set_ratio(f.s10, f.s10a, true, false), 50);
-    }
-
-    #[test]
-    fn test_partial_token_set_ratio() {
-        let f = Fixture::new();
-        assert_eq!(fuzz::partial_token_set_ratio(f.s4, f.s7, true, true), 100);
-    }
-
-    #[test]
-    fn test_wratio_equal() {
-        let f = Fixture::new();
-        assert_eq!(fuzz::wratio(f.s1, f.s1a, true, true), 100);
-    }
-
-    #[test]
-    fn test_wratio_case_insensitive() {
-        let f = Fixture::new();
-        assert_eq!(fuzz::wratio(f.s1, f.s2, true, true), 100);
-    }
-
-    #[test]
-    fn test_wratio_partial_match() {
-        let f = Fixture::new();
-        assert_eq!(fuzz::wratio(f.s1, f.s3, true, true), 90);
-    }
-
-    #[test]
-    fn test_wratio_misordered_match() {
-        let f = Fixture::new();
-        assert_eq!(fuzz::wratio(f.s4, f.s5, true, true), 95);
-    }
-
-    #[test]
-    fn test_empty_string_score_100() {
-        assert_eq!(fuzz::ratio("", ""), 100);
-        assert_eq!(fuzz::partial_ratio("", ""), 100);
-    }
 }
