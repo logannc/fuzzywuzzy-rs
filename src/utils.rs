@@ -102,6 +102,7 @@ fn find_longest_match<'a>(
 /// # use fuzzywuzzy::utils::get_matching_blocks;
 /// assert_eq!(get_matching_blocks("abxcd", "abcd"), vec![(0, 0, 2), (3, 2, 2), (5, 4, 0)]);
 /// ```
+#[allow(clippy::many_single_char_names)]
 pub fn get_matching_blocks<'a>(a: &'a str, b: &'a str) -> Vec<(usize, usize, usize)> {
     let flipped;
     let (shorter, longer) = if a.len() <= b.len() {
