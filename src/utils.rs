@@ -1,9 +1,33 @@
-/// Process string by
-/// # removing all but letters and numbers
-/// # trim whitespace
-/// # force to lower case
+//! Standalone functions used by the rest of the crate. You might also find them useful.
+
+/// Used to preprocess strings into 'canonical' forms.
 ///
-/// If force_ascii == true, force convert to ascii. By default, this is false.
+/// Process string by
+/// 1. if `force_ascii`, remove non-ascii characters
+/// 2. replace all non-alphanumeric characters with a space
+/// 3. force to lower case
+/// 4. trim whitespace
+///
+/// ```
+/// # use fuzzywuzzy::utils::full_process;
+/// assert_eq!(full_process("Lorem Ipsum", false), "lorem ipsum");
+/// assert_eq!(full_process("C'est la vie", false), "c est la vie");
+/// assert_eq!(full_process("Ça va?", false), "ça va");
+/// assert_eq!(full_process("Cães danados", false), "cães danados");
+/// assert_eq!(full_process("¬Camarões assados", false), "camarões assados");
+/// assert_eq!(full_process("a¬4ሴ2€耀", false), "a 4ሴ2 耀");
+/// assert_eq!(full_process("Á", false), "á");
+///
+/// assert_eq!(full_process("Lorem Ipsum", true), "lorem ipsum");
+/// assert_eq!(full_process("C'est la vie", true), "c est la vie");
+/// assert_eq!(full_process("Ça va?", true), "a va");
+/// assert_eq!(full_process("Cães danados", true), "ces danados");
+/// assert_eq!(full_process("¬Camarões assados", true), "camares assados");
+/// // Notice that the filtering of non-ascii values occurs *before* replacing
+/// // non-alphanumeric with whitespace, which changes the result dramatically.
+/// assert_eq!(full_process("a¬4ሴ2€耀", true), "a42");
+/// assert_eq!(full_process("Á", true), "");
+/// ```
 pub fn full_process(s: &str, force_ascii: bool) -> String {
     let mut result = s.to_string();
     if force_ascii {
@@ -13,11 +37,21 @@ pub fn full_process(s: &str, force_ascii: bool) -> String {
         .chars()
         .map(|c| if c.is_alphanumeric() { c } else { ' ' })
         .collect();
-    result.make_ascii_lowercase();
-    result.trim().to_string()
+    result.to_lowercase().trim().into()
 }
 
-/// Ensures that the input string is non-empty.
+/// A vestigial function from the port from Python's fuzzywuzzy.
+///
+/// We, [`fuzzywuzzy-rs`](https://github.com/logannc/fuzzywuzzy-rs), attempt to maintain identical results with [`fuzzywuzzy-py`](https://github.com/seatgeek/fuzzywuzzy).
+/// This function has been kept so that if the python version adds constraints, it is easy to propagate.
+///
+/// It makes sure the string is non-empty.
+///
+/// ```
+/// # use fuzzywuzzy::utils::validate_string;
+/// assert_eq!(validate_string(""), false);
+/// assert_eq!(validate_string("anything else"), true);
+/// ```
 pub fn validate_string(s: &str) -> bool {
     !s.is_empty()
 }
@@ -56,7 +90,28 @@ fn find_longest_match<'a>(
     (low1, low2, 0)
 }
 
-pub fn get_matching_blocks<'a>(shorter: &'a str, longer: &'a str) -> Vec<(usize, usize, usize)> {
+/// Returns list of triples describing matching sequences.
+///
+/// The first number is the index in the first string of the beginning of the match.
+/// The second number is the index of the second string of the beginning of the match.
+/// The final number is the length of the match.
+///
+/// The final matching sequence will be a trivial matching sequence of (a.len(), b.len(), 0) and will be the only match of length 0.
+///
+/// ```
+/// # use fuzzywuzzy::utils::get_matching_blocks;
+/// assert_eq!(get_matching_blocks("abxcd", "abcd"), vec![(0, 0, 2), (3, 2, 2), (5, 4, 0)]);
+/// ```
+#[allow(clippy::many_single_char_names)]
+pub fn get_matching_blocks<'a>(a: &'a str, b: &'a str) -> Vec<(usize, usize, usize)> {
+    let flipped;
+    let (shorter, longer) = if a.len() <= b.len() {
+        flipped = false;
+        (a, b)
+    } else {
+        flipped = true;
+        (b, a)
+    };
     // https://github.com/python-git/python/blob/master/Lib/difflib.py#L461
     let (len1, len2) = (shorter.len(), longer.len());
     let mut queue: Vec<(usize, usize, usize, usize)> = vec![(0, len1, 0, len2)];
@@ -93,4 +148,21 @@ pub fn get_matching_blocks<'a>(shorter: &'a str, longer: &'a str) -> Vec<(usize,
     }
     non_adjacent.push((len1, len2, 0));
     non_adjacent
+        .into_iter()
+        .map(|(i, j, k)| if flipped { (j, i, k) } else { (i, j, k) })
+        .collect()
+}
+
+/// some common short circuiting for ratio finding functions.
+/// If the strings are equal, they have a ratio of 100%.
+/// If only one of the strings is empty, they have a ratio of 0%.
+macro_rules! check_trivial {
+    ($s1:expr, $s2:expr) => {
+        if $s1 == $s2 {
+            return 100;
+        }
+        if $s1.is_empty() ^ $s2.is_empty() {
+            return 0;
+        }
+    };
 }

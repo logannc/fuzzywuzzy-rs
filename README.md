@@ -1,12 +1,19 @@
-# fuzzywuzzy-rs [![docs.rs badge](https://docs.rs/fuzzywuzzy/badge.svg)](https://docs.rs/fuzzywuzzy) [![crates.io badge](https://img.shields.io/crates/v/fuzzywuzzy.svg)](https://crates.io/crates/fuzzywuzzy)
-Fuzzy string matching like a boss. It uses Levenshtein Distance to calculate the differences between sequences in a simple-to-use package.
+# fuzzywuzzy-rs
 
-**Note: This project was originally named `fuzzyrusty`. Someone else cloned and published it to crates.io https://crates.io/crates/fuzzyrusty. _We do not control that crate._ This is why we have changed the name.**
+[![docs.rs badge](https://docs.rs/fuzzywuzzy/badge.svg)](https://docs.rs/fuzzywuzzy) [![crates.io badge](https://img.shields.io/crates/v/fuzzywuzzy.svg)](https://crates.io/crates/fuzzywuzzy)
+
+> Fuzzy string matching like a boss. It uses Levenshtein Distance to calculate the differences between sequences in a simple-to-use package.
+
+This is a Rust port of the Python package [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy). We aim to be a drop-in replacement for the original.
+
+At the time of writing, our matching algorithm is based on the difflib implementation results which may, in rare cases, [have slightly different results](https://github.com/seatgeek/fuzzywuzzy/issues/128) compared to the Python Levenshtein implementation.
+
+**NOTE: This project was originally named `fuzzyrusty`, but _someone else_ cloned and [published it to crates.io](https://crates.io/crates/fuzzyrusty). _We do not control that crate_, so we have renamed this crate to clearly identify as a port of the original.**
 
 ## Installation
 `fuzzywuzzy` is currently available through GitHub or crates.io.
 
-For the latest stable releas, add this to your `Cargo.toml`:
+For the latest stable release, add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
@@ -21,7 +28,7 @@ fuzzywuzzy = { git = "https://github.com/logannc/fuzzywuzzy-rs", branch = "maste
 ```
 
 ## Documentation
-Clone the repository and run `$ cargo doc --open`.
+Clone the repository and run `$ cargo doc --open`, or visit [docs.rs](https://docs.rs/crate/fuzzywuzzy/0.0.2).
 
 ## Usage
 ### Simple Ratio
