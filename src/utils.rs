@@ -116,7 +116,7 @@ fn slice_utf8<'a>(string: &'a str, low: usize, high: usize) -> Option<&'a str> {
         }
     }
 
-    low_index.zip(high_index).map(|(l, h)| &string[l..h])
+    Some(&string[low_index?..high_index?])
 }
 
 fn find_longest_match<'a>(
