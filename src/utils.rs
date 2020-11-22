@@ -63,15 +63,22 @@ pub fn validate_string(s: &str) -> bool {
 mod test {
     #[allow(unused_imports)]
     use super::*;
+
     #[test]
     fn slice_in_the_middle() {
         let s = "this is a test"; // No unicode
         assert_eq!(slice_utf8(s, 3, 6), Some(&s[3..6]));
     }
+
     #[test]
     fn slice_in_the_utf8() {
         let s = "ϵthiϕś αβ a test"; // Unicode
         assert_eq!(slice_utf8(s, 2, 6), Some("hiϕś"));
+    }
+
+    #[test]
+    fn test_short() {
+        slice_utf8("ö", 0, 1);
     }
 }
 
@@ -100,7 +107,7 @@ fn slice_utf8(string: &str, low: usize, high: usize) -> Option<&str> {
         high_index = if let Some((i, _)) = indices.next() {
             Some(i)
         } else {
-            low_index.map(|l| l + 1)
+            Some(string.len())
         };
     } else {
         for (i, e) in &mut indices {
