@@ -67,13 +67,13 @@ mod test {
     #[test]
     fn slice_in_the_middle() {
         let s = "this is a test"; // No unicode
-        assert_eq!(slice_utf8(s, 3, 6), Some(&s[3..6]));
+        assert_eq!(slice_utf8(s, 3, 6), &s[3..6]);
     }
 
     #[test]
     fn slice_in_the_utf8() {
         let s = "ϵthiϕś αβ a test"; // Unicode
-        assert_eq!(slice_utf8(s, 2, 6), Some("hiϕś"));
+        assert_eq!(slice_utf8(s, 2, 6), "hiϕś");
     }
 
     #[test]
@@ -86,6 +86,12 @@ mod test {
         let s = "من";
         println!("found length {}", s.chars().count());
         slice_utf8(s, 0, 2);
+    }
+
+    #[test]
+    fn empty() {
+        let s = "abcd";
+        assert_eq!(slice_utf8(s, 2, 2), &s[2..2]);
     }
 }
 
@@ -100,7 +106,13 @@ mod test {
 /// typical usage would be:
 ///     `slice_utf8(simple_string, 3, 7)` instead of `&simple_string[3..7]``
 ///
-fn slice_utf8(string: &str, low: usize, high: usize) -> Option<&str> {
+/// Panics if `low` > `high` or `high` > `string.len`
+fn slice_utf8(string: &str, low: usize, high: usize) -> &str {
+    debug_assert!(low <= high);
+    debug_assert!(high <= string.len());
+    if low == high {
+        return "";
+    }
     let mut indices = string.char_indices().enumerate().map(|(e, (i, _))| (i, e));
     let mut low_index = None;
     let mut high_index = None;
@@ -131,7 +143,9 @@ fn slice_utf8(string: &str, low: usize, high: usize) -> Option<&str> {
         }
     }
 
-    Some(&string[low_index?..high_index?])
+    let high = high_index.unwrap();
+    let low = low_index.unwrap();
+    &string[low..high]
 }
 
 fn find_longest_match<'a>(
@@ -152,11 +166,11 @@ fn find_longest_match<'a>(
     // decrement size. for each block size, start from the front of a and return
     // if only one match If multiple matches for a given block size and index,
     // return the one that starts earliest in b.
-    let longsub = slice_utf8(longer, low2, high2).unwrap();
+    let longsub = slice_utf8(longer, low2, high2);
     let slen = high1 - low1;
     for size in (1..slen + 1).rev() {
         for start in 0..slen - size + 1 {
-            let substr = slice_utf8(&shorter, low1 + start, low1 + start + size).unwrap();
+            let substr = slice_utf8(&shorter, low1 + start, low1 + start + size);
             let matches: Vec<(usize, &'a str)> = longsub.match_indices(substr).collect();
             // Does this need to be sorted?
             if let Some(&(startb, matchstr)) = matches.first() {
