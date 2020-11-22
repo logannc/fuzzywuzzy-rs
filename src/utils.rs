@@ -146,10 +146,20 @@ fn slice_utf8(string: &str, low: usize, high: usize) -> &str {
         high_index = Some(string.len());
     }
 
-    #[cfg(debug)]
-    if high_index.is_none() || low_index.is_none() {
-        eprintln!("About to crash on {:?}[{}..{}]", string, low, high);
-    }
+    debug_assert!(
+        high_index.is_some(),
+        "High value not calculated on input {:?}[{}..{}]",
+        string,
+        low,
+        high
+    );
+    debug_assert!(
+        low_index.is_some(),
+        "Low value not calculated on input {:?}[{}..{}]",
+        string,
+        low,
+        high
+    );
 
     let high = high_index.unwrap();
     let low = low_index.unwrap();
