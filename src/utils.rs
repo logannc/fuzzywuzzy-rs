@@ -42,8 +42,11 @@ pub fn full_process(s: &str, force_ascii: bool) -> String {
 
 /// A vestigial function from the port from Python's fuzzywuzzy.
 ///
-/// We, [`fuzzywuzzy-rs`](https://github.com/logannc/fuzzywuzzy-rs), attempt to maintain identical results with [`fuzzywuzzy-py`](https://github.com/seatgeek/fuzzywuzzy).
-/// This function has been kept so that if the python version adds constraints, it is easy to propagate.
+/// We, [`fuzzywuzzy-rs`](https://github.com/logannc/fuzzywuzzy-rs), attempt to
+/// maintain identical results with
+/// [`fuzzywuzzy-py`](https://github.com/seatgeek/fuzzywuzzy). This function has
+/// been kept so that if the python version adds constraints, it is easy to
+/// propagate.
 ///
 /// It makes sure the string is non-empty.
 ///
@@ -54,6 +57,66 @@ pub fn full_process(s: &str, force_ascii: bool) -> String {
 /// ```
 pub fn validate_string(s: &str) -> bool {
     !s.is_empty()
+}
+
+#[cfg(test)]
+mod test {
+    #[allow(unused_imports)]
+    use super::*;
+    #[test]
+    fn slice_in_the_middle() {
+        let s = "this is a test"; // No unicode
+        assert_eq!(slice_utf8(s, 3, 6), Some(&s[3..6]));
+    }
+    #[test]
+    fn slice_in_the_utf8() {
+        let s = "ϵthiϕś αβ a test"; // Unicode
+        assert_eq!(slice_utf8(s, 2, 6), Some("hiϕś"));
+    }
+}
+
+/// A function to handle slicing into strings which may contain unicode.
+///
+/// Unlike Python, Rust cares deeply about unicode strings and ensuring every
+/// slice into them remains valid. As sliceing assumes that each enicode
+/// charicter is either in or outside of a slice, a simple slice operation can
+/// panic when run on a Rust string. We manually slice a Rust string by
+/// iterating over it's charicter points. This avoids panic on unicode strings.
+///
+/// typical usage would be:
+///     `slice_utf8(simple_string, 3, 7)` instead of `&simple_string[3..7]``
+///
+fn slice_utf8<'a>(string: &'a str, low: usize, high: usize) -> Option<&'a str> {
+    let mut indices = string.char_indices().enumerate().map(|(e, (i, _))| (i, e));
+    let mut low_index = None;
+    let mut high_index = None;
+    for (i, e) in &mut indices {
+        if e == low {
+            low_index = Some(i);
+            break;
+        }
+    }
+    if low + 1 == high {
+        high_index = if let Some((i, _)) = indices.next() {
+            Some(i)
+        } else {
+            low_index.map(|l| l + 1)
+        };
+    } else {
+        for (i, e) in &mut indices {
+            // Rust excludes the last index
+            if e + 1 == high {
+                if let Some((i, _)) = indices.next() {
+                    high_index = Some(i);
+                } else {
+                    high_index = Some(i + 1);
+                }
+                break;
+            }
+        }
+    }
+
+    low_index.zip(high_index).map(|(l, h)| &string[l..h])
 }
 
 fn find_longest_match<'a>(
@@ -69,21 +132,32 @@ fn find_longest_match<'a>(
     //  In other words, of all maximal matching blocks, return one that
     //  starts earliest in a, and of all those maximal matching blocks that
     //  start earliest in a, return the one that starts earliest in b.
-
-    // In MY words:
-    // So, try to find a block of size shorter.len(), else decrement size.
-    // for each block size, start from the front of a and return if only one match
-    // If multiple matches for a given block size and index, return the one that starts
-    // earliest in b.
-    let longsub = &longer[low2..high2];
+    //
+    // In MY words: So, try to find a block of size shorter.len(), else
+    // decrement size. for each block size, start from the front of a and return
+    // if only one match If multiple matches for a given block size and index,
+    // return the one that starts earliest in b.
+    let longsub = slice_utf8(longer, low2, high2).unwrap();
+    let backup = &longer[low2..high2];
+    if longsub != backup {
+        println!(
+            "backup: {:?} != longsub: {:?} on string: {:?}[{}..{}] with len {}",
+            backup,
+            longsub,
+            longer,
+            low2,
+            high2,
+            longer.chars().count()
+        )
+    }
     let slen = high1 - low1;
     for size in (1..slen + 1).rev() {
         for start in 0..slen - size + 1 {
-            let substr = &shorter[low1 + start..low1 + start + size];
+            let substr = slice_utf8(&shorter, low1 + start, low1 + start + size).unwrap();
             let matches: Vec<(usize, &'a str)> = longsub.match_indices(substr).collect();
             // Does this need to be sorted?
             if let Some(&(startb, matchstr)) = matches.first() {
-                return (low1 + start, low2 + startb, matchstr.len());
+                return (low1 + start, low2 + startb, matchstr.chars().count());
             }
         }
     }
@@ -96,7 +170,8 @@ fn find_longest_match<'a>(
 /// The second number is the index of the second string of the beginning of the match.
 /// The final number is the length of the match.
 ///
-/// The final matching sequence will be a trivial matching sequence of (a.len(), b.len(), 0) and will be the only match of length 0.
+/// The final matching sequence will be a trivial matching sequence of (a.len(),
+/// b.len(), 0) and will be the only match of length 0.
 ///
 /// ```
 /// # use fuzzywuzzy::utils::get_matching_blocks;
@@ -105,15 +180,19 @@ fn find_longest_match<'a>(
 #[allow(clippy::many_single_char_names)]
 pub fn get_matching_blocks<'a>(a: &'a str, b: &'a str) -> Vec<(usize, usize, usize)> {
     let flipped;
-    let (shorter, longer) = if a.len() <= b.len() {
-        flipped = false;
-        (a, b)
-    } else {
-        flipped = true;
-        (b, a)
+    // Handle utf-8 encodings
+    let (shorter, len1, longer, len2) = {
+        let a_len = a.chars().count();
+        let b_len = b.chars().count();
+        if a_len <= b_len {
+            flipped = false;
+            (a, a_len, b, b_len)
+        } else {
+            flipped = true;
+            (b, b_len, a, a_len)
+        }
     };
     // https://github.com/python-git/python/blob/master/Lib/difflib.py#L461
-    let (len1, len2) = (shorter.len(), longer.len());
     let mut queue: Vec<(usize, usize, usize, usize)> = vec![(0, len1, 0, len2)];
     let mut matching_blocks = Vec::new();
     while let Some((low1, high1, low2, high2)) = queue.pop() {

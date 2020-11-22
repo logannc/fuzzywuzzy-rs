@@ -29,7 +29,7 @@ pub fn ratio(a: &str, b: &str) -> u8 {
         .iter()
         .map(|&(_, _, s)| s)
         .sum();
-    let sumlength: f32 = (a.len() + b.len()) as f32;
+    let sumlength: f32 = (a.chars().count() + b.chars().count()) as f32;
     if sumlength > 0.0 {
         (100.0 * (2.0 * (matches as f32) / sumlength)).round() as u8
     } else {
@@ -67,7 +67,7 @@ pub fn ratio(a: &str, b: &str) -> u8 {
 /// ```
 pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
     check_trivial!(s1, s2);
-    let (shorter, longer) = if s1.len() <= s2.len() {
+    let (shorter, longer) = if s1.chars().count() <= s2.chars().count() {
         (s1, s2)
     } else {
         (s2, s1)
@@ -76,7 +76,7 @@ pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
     let mut max: u8 = 0;
     for (i, j, _) in blocks {
         let long_start = if j > i { j - i } else { 0 };
-        let long_end = std::cmp::min(long_start + shorter.len(), longer.len());
+        let long_end = std::cmp::min(long_start + shorter.chars().count(), longer.chars().count());
         let long_substr = &longer[long_start..long_end];
         let r = ratio(shorter, long_substr);
         if r > 99 {
@@ -341,8 +341,8 @@ pub fn wratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
     let mut partial_scale = 0.90;
 
     let base = ratio(p1r, p2r);
-    let len_ratio =
-        std::cmp::max(p1.len(), p2.len()) as f64 / std::cmp::min(p1.len(), p2.len()) as f64;
+    let (p1_len, p2_len) = (p1.chars().count(), p2.chars().count());
+    let len_ratio = std::cmp::max(p1_len, p2_len) as f64 / std::cmp::min(p1_len, p2_len) as f64;
 
     // if strings are similar length, don't use partials
     if len_ratio < 1.5 {
