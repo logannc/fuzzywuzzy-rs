@@ -138,18 +138,6 @@ fn find_longest_match<'a>(
     // if only one match If multiple matches for a given block size and index,
     // return the one that starts earliest in b.
     let longsub = slice_utf8(longer, low2, high2).unwrap();
-    let backup = &longer[low2..high2];
-    if longsub != backup {
-        println!(
-            "backup: {:?} != longsub: {:?} on string: {:?}[{}..{}] with len {}",
-            backup,
-            longsub,
-            longer,
-            low2,
-            high2,
-            longer.chars().count()
-        )
-    }
     let slen = high1 - low1;
     for size in (1..slen + 1).rev() {
         for start in 0..slen - size + 1 {
