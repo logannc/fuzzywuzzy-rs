@@ -77,8 +77,15 @@ mod test {
     }
 
     #[test]
-    fn test_short() {
+    fn short() {
         slice_utf8("ö", 0, 1);
+    }
+
+    #[test]
+    fn arabic() {
+        let s = "من";
+        println!("found length {}", s.chars().count());
+        slice_utf8(s, 0, 2);
     }
 }
 
@@ -97,27 +104,28 @@ fn slice_utf8(string: &str, low: usize, high: usize) -> Option<&str> {
     let mut indices = string.char_indices().enumerate().map(|(e, (i, _))| (i, e));
     let mut low_index = None;
     let mut high_index = None;
+    let mut calc_high_index = |mut indices: std::iter::Map<_, _>| {
+        high_index = Some(if let Some((i, _)) = indices.next() {
+            i
+        } else {
+            string.len()
+        })
+    };
+    // Find low bound
     for (i, e) in &mut indices {
         if e == low {
             low_index = Some(i);
             break;
         }
     }
+    // find high bound
     if low + 1 == high {
-        high_index = if let Some((i, _)) = indices.next() {
-            Some(i)
-        } else {
-            Some(string.len())
-        };
+        calc_high_index(indices);
     } else {
-        for (i, e) in &mut indices {
+        for (_, e) in &mut indices {
             // Rust excludes the last index
             if e + 1 == high {
-                if let Some((i, _)) = indices.next() {
-                    high_index = Some(i);
-                } else {
-                    high_index = Some(i + 1);
-                }
+                calc_high_index(indices);
                 break;
             }
         }
