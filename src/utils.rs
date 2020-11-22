@@ -65,9 +65,9 @@ mod test {
     use super::*;
 
     #[test]
-    fn slice_in_the_middle() {
-        let s = "this is a test"; // No unicode
-        assert_eq!(slice_utf8(s, 3, 6), &s[3..6]);
+    fn slice_at_the_end() {
+        let s = "this is a test"; // No Unicode
+        assert_eq!(slice_utf8(s, 3, s.len()), &s[3..(s.len())]);
     }
 
     #[test]
@@ -83,7 +83,7 @@ mod test {
 
     #[test]
     fn arabic() {
-        let s = "من";
+        let s = "من"; // entire string is unicode
         println!("found length {}", s.chars().count());
         slice_utf8(s, 0, 2);
     }
@@ -98,10 +98,10 @@ mod test {
 /// A function to handle slicing into strings which may contain unicode.
 ///
 /// Unlike Python, Rust cares deeply about unicode strings and ensuring every
-/// slice into them remains valid. As sliceing assumes that each enicode
-/// charicter is either in or outside of a slice, a simple slice operation can
+/// slice into them remains valid. As slicing assumes that each Unicode
+/// character is either in or outside of a slice, a simple slice operation can
 /// panic when run on a Rust string. We manually slice a Rust string by
-/// iterating over it's charicter points. This avoids panic on unicode strings.
+/// iterating over it's character points. This avoids panic on unicode strings.
 ///
 /// typical usage would be:
 ///     `slice_utf8(simple_string, 3, 7)` instead of `&simple_string[3..7]``
@@ -145,6 +145,8 @@ fn slice_utf8(string: &str, low: usize, high: usize) -> &str {
     if high_index.is_none() && high == string.chars().count() {
         high_index = Some(string.len());
     }
+
+    #[cfg(debug)]
     if high_index.is_none() || low_index.is_none() {
         eprintln!("About to crash on {:?}[{}..{}]", string, low, high);
     }

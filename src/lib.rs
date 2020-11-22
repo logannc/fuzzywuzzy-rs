@@ -1,3 +1,4 @@
+#![deny(warnings)]
 //! Fuzzy string matching like
 //! [FuzzyWuzzy.py](https://github.com/seatgeek/fuzzywuzzy) like a boss. It uses
 //! [Levenshtein Distance](https://en.wikipedia.org/wiki/Levenshtein_distance)
