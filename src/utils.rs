@@ -59,41 +59,6 @@ pub fn validate_string(s: &str) -> bool {
     !s.is_empty()
 }
 
-#[cfg(test)]
-mod test {
-    #[allow(unused_imports)]
-    use super::*;
-
-    #[test]
-    fn slice_at_the_end() {
-        let s = "this is a test"; // No Unicode
-        assert_eq!(slice_utf8(s, 3, s.len()), &s[3..(s.len())]);
-    }
-
-    #[test]
-    fn slice_in_the_utf8() {
-        let s = "ϵthiϕś αβ a test"; // Unicode
-        assert_eq!(slice_utf8(s, 2, 6), "hiϕś");
-    }
-
-    #[test]
-    fn short() {
-        assert_eq!(slice_utf8("ö", 0, 1), "ö");
-    }
-
-    #[test]
-    fn arabic() {
-        let s = "من"; // entire string is unicode
-        assert_eq!(slice_utf8(s, 0, 2), s);
-    }
-
-    #[test]
-    fn empty() {
-        let s = "abcd";
-        assert_eq!(slice_utf8(s, 2, 2), &s[2..2]);
-    }
-}
-
 /// A function to handle slicing into strings which may contain unicode.
 ///
 /// Unlike Python, Rust cares deeply about unicode strings and ensuring every
@@ -106,21 +71,22 @@ mod test {
 ///     `slice_utf8(simple_string, 3, 7)` instead of `&simple_string[3..7]``
 ///
 /// Panics if `low` > `high` or `high` > `string.len`
+///
+/// NOTE: Both low and high are Unicode character offsets, not byte offsets.
 fn slice_utf8(string: &str, low: usize, high: usize) -> &str {
-    debug_assert!(low <= high);
-    debug_assert!(high <= string.len());
+    debug_assert!(!(low > high));
+    debug_assert!(!(high > string.chars().count()));
     if low == high {
         return "";
     }
-    let mut indices = string.char_indices().enumerate().map(|(e, (i, _))| (i, e));
+    let mut indices = string
+        .char_indices()
+        .enumerate()
+        .map(|(char_offset, (byte_offset, _))| (byte_offset, char_offset));
     let mut low_index = None;
     let mut high_index = None;
-    let mut calc_high_index = |mut indices: std::iter::Map<_, _>| {
-        high_index = Some(if let Some((i, _)) = indices.next() {
-            i
-        } else {
-            string.len()
-        })
+    let mut calc_high_index = |indices: Option<_>| {
+        high_index = Some(indices.map(|(i, _)| i).unwrap_or(string.len()));
     };
     // Find low bound
     for (i, e) in &mut indices {
@@ -129,36 +95,18 @@ fn slice_utf8(string: &str, low: usize, high: usize) -> &str {
             break;
         }
     }
-    // find high bound
     if low + 1 == high {
-        calc_high_index(indices);
+        calc_high_index(indices.next());
     } else {
-        for (_, e) in &mut indices {
-            // Rust excludes the last index
-            if e + 1 == high {
-                calc_high_index(indices);
-                break;
-            }
+        let mut index = indices.next();
+        while index.map(|(_, e)| e + 1) != Some(high) && index.is_some() {
+            index = indices.next()
         }
+        calc_high_index(indices.next());
     }
     if high_index.is_none() && high == string.chars().count() {
         high_index = Some(string.len());
     }
-
-    debug_assert!(
-        high_index.is_some(),
-        "High value not calculated on input {:?}[{}..{}]",
-        string,
-        low,
-        high
-    );
-    debug_assert!(
-        low_index.is_some(),
-        "Low value not calculated on input {:?}[{}..{}]",
-        string,
-        low,
-        high
-    );
 
     let high = high_index.unwrap();
     let low = low_index.unwrap();
@@ -183,14 +131,18 @@ fn find_longest_match<'a>(
     // decrement size. for each block size, start from the front of a and return
     // if only one match If multiple matches for a given block size and index,
     // return the one that starts earliest in b.
+    debug_assert!(low1 <= high1);
+    debug_assert!(low2 <= high2);
+    debug_assert!(high1 <= shorter.chars().count());
+    debug_assert!(high2 <= longer.chars().count());
     let longsub = slice_utf8(longer, low2, high2);
     let slen = high1 - low1;
     for size in (1..slen + 1).rev() {
         for start in 0..slen - size + 1 {
             let substr = slice_utf8(&shorter, low1 + start, low1 + start + size);
-            let matches: Vec<(usize, &'a str)> = longsub.match_indices(substr).collect();
-            // Does this need to be sorted?
-            if let Some(&(startb, matchstr)) = matches.first() {
+            // Note: str::match_indices returns byte offsets, not char indices.
+            // TODO: get this working.
+            if let Some((startb, matchstr)) = longsub.match_indices(substr).next() {
                 return (low1 + start, low2 + startb, matchstr.chars().count());
             }
         }
@@ -214,7 +166,8 @@ fn find_longest_match<'a>(
 #[allow(clippy::many_single_char_names)]
 pub fn get_matching_blocks<'a>(a: &'a str, b: &'a str) -> Vec<(usize, usize, usize)> {
     let flipped;
-    // Handle utf-8 encodings
+    // TODO: figure out if this is necessary. Removing ordering and setting
+    // `flipped` to false does not break tests.
     let (shorter, len1, longer, len2) = {
         let a_len = a.chars().count();
         let b_len = b.chars().count();
@@ -231,6 +184,8 @@ pub fn get_matching_blocks<'a>(a: &'a str, b: &'a str) -> Vec<(usize, usize, usi
     let mut matching_blocks = Vec::new();
     while let Some((low1, high1, low2, high2)) = queue.pop() {
         let (i, j, k) = find_longest_match(shorter, longer, low1, high1, low2, high2);
+        debug_assert!(i <= shorter.chars().count());
+        debug_assert!(j <= longer.chars().count());
         if k != 0 {
             matching_blocks.push((i, j, k));
             if low1 < i && low2 < j {
@@ -278,4 +233,55 @@ macro_rules! check_trivial {
             return 0;
         }
     };
+}
+
+#[cfg(test)]
+mod test {
+    #[allow(unused_imports)]
+    use super::*;
+
+    #[test]
+    fn slice_at_the_end() {
+        let s = "this is a test"; // No Unicode
+        assert_eq!(slice_utf8(s, 3, s.len()), &s[3..(s.len())]);
+    }
+
+    #[test]
+    fn slice_in_the_utf8() {
+        let s = "ϵthiϕś αβ a test"; // Unicode
+        assert_eq!(slice_utf8(s, 2, 6), "hiϕś");
+    }
+
+    #[test]
+    fn short() {
+        assert_eq!(slice_utf8("ö", 0, 1), "ö");
+    }
+
+    #[test]
+    fn arabic() {
+        let s = "من"; // entire string is unicode
+        assert_eq!(slice_utf8(s, 0, 2), s);
+    }
+
+    #[test]
+    fn empty() {
+        let s = "abcd";
+        assert_eq!(slice_utf8(s, 2, 2), &s[2..2]);
+    }
+
+    #[test]
+    #[should_panic]
+    #[cfg(debug)]
+    fn overlarge() {
+        let s = "abcde";
+        slice_utf8(s, 0, 10);
+    }
+
+    #[test]
+    #[should_panic]
+    #[cfg(debug)]
+    fn low_greater_then_high() {
+        let s = "abcde";
+        slice_utf8(s, 4, 2);
+    }
 }

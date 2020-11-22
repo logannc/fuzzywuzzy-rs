@@ -381,3 +381,29 @@ pub fn uwratio(s1: &str, s2: &str, full_process: bool) -> u8 {
     // trivial check omitted because this is a shallow delegator to wratio which checks.
     wratio(s1, s2, false, full_process)
 }
+
+#[cfg(test)]
+mod test {
+    use super::ratio;
+    #[test]
+    fn ratio_unicode() {
+        let list = [
+            "スマホでchance",
+            "học",
+            "ρɪc",
+            "quốc",
+            "trước",
+            "thực",
+            "我刚上传了一张照片到facebook",
+            "お名前.com",
+            "っˇωˇc",
+            "出会いを探すならpcmax",
+            "化粧cas",
+            "fòllòwbáck",
+        ];
+        for word in list.iter() {
+            eprintln!("word: {:?}", word);
+            ratio("abcde", word);
+        }
+    }
+}
