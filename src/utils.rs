@@ -195,7 +195,7 @@ pub fn get_matching_blocks<'a>(a: &'a str, b: &'a str) -> Vec<(usize, usize, usi
             }
         }
     }
-    matching_blocks.sort(); // Is this necessary?
+    matching_blocks.sort_unstable(); // Is this necessary?
     let (mut i1, mut j1, mut k1) = (0, 0, 0);
     let mut non_adjacent = Vec::new();
     for (i2, j2, k2) in matching_blocks {

@@ -96,7 +96,7 @@ fn process_and_sort(s: &str, force_ascii: bool, full_process: bool) -> String {
         s.to_string()
     };
     let mut ts_split: Vec<_> = ts.split_whitespace().collect();
-    ts_split.sort();
+    ts_split.sort_unstable();
     ts_split.join(" ")
 }
 
@@ -178,9 +178,9 @@ fn token_set(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process:
     let mut intersection: Vec<_> = t1.intersection(&t2).cloned().collect();
     let mut diff1to2: Vec<_> = t1.difference(&t2).cloned().collect();
     let mut diff2to1: Vec<_> = t2.difference(&t1).cloned().collect();
-    intersection.sort();
-    diff1to2.sort();
-    diff2to1.sort();
+    intersection.sort_unstable();
+    diff1to2.sort_unstable();
+    diff2to1.sort_unstable();
     let intersect_str = intersection.join(" ");
     let diff1to2_str = diff1to2.join(" ");
     let diff2to1_str = diff2to1.join(" ");
