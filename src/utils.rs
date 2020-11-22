@@ -142,6 +142,12 @@ fn slice_utf8(string: &str, low: usize, high: usize) -> &str {
             }
         }
     }
+    if high_index.is_none() && high == string.chars().count() {
+        high_index = Some(string.len());
+    }
+    if high_index.is_none() || low_index.is_none() {
+        eprintln!("About to crash on {:?}[{}..{}]", string, low, high);
+    }
 
     let high = high_index.unwrap();
     let low = low_index.unwrap();
