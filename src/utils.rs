@@ -78,14 +78,13 @@ mod test {
 
     #[test]
     fn short() {
-        slice_utf8("ö", 0, 1);
+        assert_eq!(slice_utf8("ö", 0, 1), "ö");
     }
 
     #[test]
     fn arabic() {
         let s = "من"; // entire string is unicode
-        println!("found length {}", s.chars().count());
-        slice_utf8(s, 0, 2);
+        assert_eq!(slice_utf8(s, 0, 2), s);
     }
 
     #[test]
