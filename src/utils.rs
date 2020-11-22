@@ -86,7 +86,7 @@ mod test {
 /// typical usage would be:
 ///     `slice_utf8(simple_string, 3, 7)` instead of `&simple_string[3..7]``
 ///
-fn slice_utf8<'a>(string: &'a str, low: usize, high: usize) -> Option<&'a str> {
+fn slice_utf8(string: &str, low: usize, high: usize) -> Option<&str> {
     let mut indices = string.char_indices().enumerate().map(|(e, (i, _))| (i, e));
     let mut low_index = None;
     let mut high_index = None;
