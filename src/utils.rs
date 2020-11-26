@@ -104,6 +104,7 @@ fn slice_utf8(string: &str, low: usize, high: usize) -> &str {
     // grab the byte-offset of the element *after* the ending character in case
     // the ending character is multi-byte
     // if we selected for the entire slice, there will not be a next element
+    #[allow(clippy::or_fun_call)]
     let high_index = indices.next().map(|(bo, _)| bo).unwrap_or(string.len());
     &string[low_index..high_index]
 }
