@@ -388,22 +388,21 @@ mod test {
     #[test]
     fn ratio_unicode() {
         let list = [
-            "スマホでchance",
-            "học",
-            "ρɪc",
-            "quốc",
-            "trước",
-            "thực",
-            "我刚上传了一张照片到facebook",
-            "お名前.com",
-            "っˇωˇc",
-            "出会いを探すならpcmax",
-            "化粧cas",
-            "fòllòwbáck",
+            ("スマホでchance", "chance", 75),
+            ("học", "hoc", 67),
+            ("ρɪc", "pic", 33),
+            ("quốc", "quoc", 75),
+            ("trước", "truoc", 60),
+            ("thực", "thuc", 75),
+            ("我刚上传了一张照片到facebook", "facebook", 62),
+            ("お名前.com", "com", 60),
+            ("っˇωˇc", "w", 0),
+            ("出会いを探すならpcmax", "pcmax", 56),
+            ("化粧cas", "cas", 75),
+            ("fòllòwbáck", "followback", 70),
         ];
-        for word in list.iter() {
-            eprintln!("word: {:?}", word);
-            ratio("abcde", word);
+        for (a, b, r) in list.iter() {
+            assert_eq!(ratio(a, b), *r);
         }
     }
 }

@@ -68,14 +68,22 @@ pub fn validate_string(s: &str) -> bool {
 /// iterating over it's character points. This avoids panic on unicode strings.
 ///
 /// typical usage would be:
-///     `slice_utf8(simple_string, 3, 7)` instead of `&simple_string[3..7]``
+///     `slice_utf8(simple_string, 3, 7)` instead of `&simple_string[3..7]` (see caveats)
 ///
 /// Panics if `low` > `high` or `high` > `string.len`
 ///
-/// NOTE: Both low and high are Unicode character offsets, not byte offsets.
+/// Caveat: `slice_utf8` arguments should use indices based on Unicode Scalar
+/// Values, not byte offsets like the example.
+///
+/// `slice_utf8` works with Rust primitives that operate on Unicode
+/// Scalar Values which are distinct from bytes and grapheme clusters. For
+/// example, `y̆` is three bytes (b'y\xcc\x86'), two Unicode Scalar Values
+/// ('y\u{0306}'), but just one grapheme cluster (`y̆`).
 fn slice_utf8(string: &str, low: usize, high: usize) -> &str {
+    // I'm unsure if this is O(1) or O(n) due to the implementation.
+    let char_count = string.chars().count();
     debug_assert!(!(low > high));
-    debug_assert!(!(high > string.chars().count()));
+    debug_assert!(!(high > char_count));
     if low == high {
         return "";
     }
@@ -83,34 +91,21 @@ fn slice_utf8(string: &str, low: usize, high: usize) -> &str {
         .char_indices()
         .enumerate()
         .map(|(char_offset, (byte_offset, _))| (byte_offset, char_offset));
-    let mut low_index = None;
-    let mut high_index = None;
-    let mut calc_high_index = |indices: Option<_>| {
-        high_index = Some(indices.map(|(i, _)| i).unwrap_or(string.len()));
-    };
-    // Find low bound
-    for (i, e) in &mut indices {
-        if e == low {
-            low_index = Some(i);
-            break;
-        }
-    }
-    if low + 1 == high {
-        calc_high_index(indices.next());
-    } else {
-        let mut index = indices.next();
-        while index.map(|(_, e)| e + 1) != Some(high) && index.is_some() {
-            index = indices.next()
-        }
-        calc_high_index(indices.next());
-    }
-    if high_index.is_none() && high == string.chars().count() {
-        high_index = Some(string.len());
-    }
-
-    let high = high_index.unwrap();
-    let low = low_index.unwrap();
-    &string[low..high]
+    // We need to find the byte-indices of the start and end of our substring
+    // that will result in a valid unicode slice.
+    // Find start of utf 8 slice by grabbing the byte offset of the char with
+    // the correct character offset.
+    let low_index = indices
+        .find(|(_, co)| *co == low)
+        .expect("Beginning of slice not found.")
+        .0;
+    // skip while we have not found our ending character of the utf 8 slice
+    let mut indices = indices.skip_while(|(_, co)| *co != high);
+    // grab the byte-offset of the element *after* the ending character in case
+    // the ending character is multi-byte
+    // if we selected for the entire slice, there will not be a next element
+    let high_index = indices.next().map(|(bo, _)| bo).unwrap_or(string.len());
+    &string[low_index..high_index]
 }
 
 fn find_longest_match<'a>(
@@ -136,14 +131,28 @@ fn find_longest_match<'a>(
     debug_assert!(high1 <= shorter.chars().count());
     debug_assert!(high2 <= longer.chars().count());
     let longsub = slice_utf8(longer, low2, high2);
+    // a map from byte offset to character offset, but we skip the hashing and use an array.
+    // for most strings, the byte and character lengths are almost the same.
+    // we only index into the map at byte offsets where characters begin,
+    // which all correct implementations below should do.
+    let mut byte_to_char_map = vec![0; longsub.len()];
+    longsub
+        .char_indices()
+        .enumerate()
+        .for_each(|(char_offset, (byte_offset, _))| {
+            byte_to_char_map[byte_offset] = char_offset;
+        });
     let slen = high1 - low1;
     for size in (1..slen + 1).rev() {
         for start in 0..slen - size + 1 {
             let substr = slice_utf8(&shorter, low1 + start, low1 + start + size);
             // Note: str::match_indices returns byte offsets, not char indices.
-            // TODO: get this working.
             if let Some((startb, matchstr)) = longsub.match_indices(substr).next() {
-                return (low1 + start, low2 + startb, matchstr.chars().count());
+                return (
+                    low1 + start,
+                    low2 + byte_to_char_map[startb],
+                    matchstr.chars().count(),
+                );
             }
         }
     }
@@ -162,12 +171,12 @@ fn find_longest_match<'a>(
 /// ```
 /// # use fuzzywuzzy::utils::get_matching_blocks;
 /// assert_eq!(get_matching_blocks("abxcd", "abcd"), vec![(0, 0, 2), (3, 2, 2), (5, 4, 0)]);
+/// assert_eq!(get_matching_blocks("abcd", "abxcd"), vec![(0, 0, 2), (2, 3, 2), (4, 5, 0)]);
+/// assert_eq!(get_matching_blocks("chance", "スマホでchance"), vec![(0, 4, 6), (6, 10, 0)]);
 /// ```
 #[allow(clippy::many_single_char_names)]
 pub fn get_matching_blocks<'a>(a: &'a str, b: &'a str) -> Vec<(usize, usize, usize)> {
     let flipped;
-    // TODO: figure out if this is necessary. Removing ordering and setting
-    // `flipped` to false does not break tests.
     let (shorter, len1, longer, len2) = {
         let a_len = a.chars().count();
         let b_len = b.chars().count();
@@ -267,6 +276,13 @@ mod test {
     fn empty() {
         let s = "abcd";
         assert_eq!(slice_utf8(s, 2, 2), &s[2..2]);
+    }
+
+    #[test]
+    fn split_cluster() {
+        let s = "y̆es";
+        assert_eq!(slice_utf8(s, 0, 1), "y");
+        assert_eq!(slice_utf8(s, 1, 4), "\u{0306}es");
     }
 
     #[test]
