@@ -29,7 +29,7 @@ pub fn ratio(a: &str, b: &str) -> u8 {
         .iter()
         .map(|&(_, _, s)| s)
         .sum();
-    let sumlength: f32 = (a.len() + b.len()) as f32;
+    let sumlength: f32 = (a.chars().count() + b.chars().count()) as f32;
     if sumlength > 0.0 {
         (100.0 * (2.0 * (matches as f32) / sumlength)).round() as u8
     } else {
@@ -67,7 +67,7 @@ pub fn ratio(a: &str, b: &str) -> u8 {
 /// ```
 pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
     check_trivial!(s1, s2);
-    let (shorter, longer) = if s1.len() <= s2.len() {
+    let (shorter, longer) = if s1.chars().count() <= s2.chars().count() {
         (s1, s2)
     } else {
         (s2, s1)
@@ -76,7 +76,7 @@ pub fn partial_ratio(s1: &str, s2: &str) -> u8 {
     let mut max: u8 = 0;
     for (i, j, _) in blocks {
         let long_start = if j > i { j - i } else { 0 };
-        let long_end = std::cmp::min(long_start + shorter.len(), longer.len());
+        let long_end = std::cmp::min(long_start + shorter.chars().count(), longer.chars().count());
         let long_substr = &longer[long_start..long_end];
         let r = ratio(shorter, long_substr);
         if r > 99 {
@@ -96,7 +96,7 @@ fn process_and_sort(s: &str, force_ascii: bool, full_process: bool) -> String {
         s.to_string()
     };
     let mut ts_split: Vec<_> = ts.split_whitespace().collect();
-    ts_split.sort();
+    ts_split.sort_unstable();
     ts_split.join(" ")
 }
 
@@ -178,9 +178,9 @@ fn token_set(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process:
     let mut intersection: Vec<_> = t1.intersection(&t2).cloned().collect();
     let mut diff1to2: Vec<_> = t1.difference(&t2).cloned().collect();
     let mut diff2to1: Vec<_> = t2.difference(&t1).cloned().collect();
-    intersection.sort();
-    diff1to2.sort();
-    diff2to1.sort();
+    intersection.sort_unstable();
+    diff1to2.sort_unstable();
+    diff2to1.sort_unstable();
     let intersect_str = intersection.join(" ");
     let diff1to2_str = diff1to2.join(" ");
     let diff2to1_str = diff2to1.join(" ");
@@ -341,8 +341,8 @@ pub fn wratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
     let mut partial_scale = 0.90;
 
     let base = ratio(p1r, p2r);
-    let len_ratio =
-        std::cmp::max(p1.len(), p2.len()) as f64 / std::cmp::min(p1.len(), p2.len()) as f64;
+    let (p1_len, p2_len) = (p1.chars().count(), p2.chars().count());
+    let len_ratio = std::cmp::max(p1_len, p2_len) as f64 / std::cmp::min(p1_len, p2_len) as f64;
 
     // if strings are similar length, don't use partials
     if len_ratio < 1.5 {
@@ -380,4 +380,29 @@ pub fn wratio(s1: &str, s2: &str, force_ascii: bool, full_process: bool) -> u8 {
 pub fn uwratio(s1: &str, s2: &str, full_process: bool) -> u8 {
     // trivial check omitted because this is a shallow delegator to wratio which checks.
     wratio(s1, s2, false, full_process)
+}
+
+#[cfg(test)]
+mod test {
+    use super::ratio;
+    #[test]
+    fn ratio_unicode() {
+        let list = [
+            ("スマホでchance", "chance", 75),
+            ("học", "hoc", 67),
+            ("ρɪc", "pic", 33),
+            ("quốc", "quoc", 75),
+            ("trước", "truoc", 60),
+            ("thực", "thuc", 75),
+            ("我刚上传了一张照片到facebook", "facebook", 62),
+            ("お名前.com", "com", 60),
+            ("っˇωˇc", "w", 0),
+            ("出会いを探すならpcmax", "pcmax", 56),
+            ("化粧cas", "cas", 75),
+            ("fòllòwbáck", "followback", 70),
+        ];
+        for (a, b, r) in list.iter() {
+            assert_eq!(ratio(a, b), *r);
+        }
+    }
 }
