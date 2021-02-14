@@ -67,7 +67,7 @@ pub struct LowerCaseNormalizer;
 
 impl Normalizer for LowerCaseNormalizer {
     fn normalize(&self, s: &str) -> String {
-        s.to_lowercase().into()
+        s.to_lowercase()
     }
 }
 

@@ -60,7 +60,7 @@ impl<'a> Segmenter<'a> for ByteSegmenter {
     // Returns an owned `Vec<u8>` because allocating additional `u8`s is cheaper than pointers into the original string.
     type Output = u8;
     fn segment(&self, s: &'a str) -> Vec<Self::Output> {
-        s.as_bytes().iter().map(|x| *x).collect()
+        s.as_bytes().iter().copied().collect()
     }
 }
 
