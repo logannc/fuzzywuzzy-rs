@@ -7,4 +7,7 @@
 #[macro_use]
 pub mod utils;
 pub mod fuzz;
+pub mod normalization;
+pub mod primitives;
 pub mod process;
+pub mod segmentation;

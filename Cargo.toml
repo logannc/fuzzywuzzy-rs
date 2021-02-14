@@ -1,6 +1,7 @@
 [package]
 name = "fuzzywuzzy"
 version = "0.0.2"
+edition = "2018"
 authors = ["Logan", "Sean"]
 description = "A pure-Rust clone of the incredibly useful fuzzy string matching python package, FuzzyWuzzy."
 repository = "https://github.com/logannc/fuzzywuzzy-rs"
@@ -10,4 +11,11 @@ keywords = ["string", "text", "processing", "matching", "fuzzy"]
 categories = ["text-processing"]
 
 
+[features]
+default = ["segmentation", "normalization"]
+segmentation = ["unicode-segmentation"]
+normalization = ["unicode-normalization"]
+
 [dependencies]
+unicode-segmentation = { version = "1.7.1", optional = true }
+unicode-normalization = { version = "0.1.17", optional = true }
