@@ -1,7 +1,7 @@
 //! Segmenter trait and default implementations.
 //!
 //! Segmentation is how strings are split into tokens for comparison.
-//! For example, two strings that *appear* identical might have different byte-level representations.
+//! For example, two strings that *visually appear* identical might have different byte-level representations.
 //!
 //! Take `ä` and `ä`. Visually, these should be identical. However, the former
 //! is Unicode character [ä (U+00E4)](https://www.compart.com/en/unicode/U+00E4)
@@ -39,6 +39,17 @@
 /// Represents a strategy for segmenting a string into units for comparison.
 ///
 /// The trait is also implemented for functions matching the signature of the `segment` method.
+///
+/// In addition to implementers of the trait, functions with a matching type signature also work.
+///
+/// ```
+/// # use fuzzywuzzy::segmentation::{Segmenter, CodePointSegmenter};
+/// let test_string = "test STRING";
+/// fn custom_segmenter(s: &str) -> Vec<char> { s.chars().collect() }
+/// assert_eq!(
+///    CodePointSegmenter.segment(&test_string),
+///    custom_segmenter.segment(&test_string));
+/// ```
 pub trait Segmenter<'a> {
     /// The type of the unit of comparison this strategy operates on.
     type Output: 'a + Eq;
@@ -54,6 +65,14 @@ impl<'a, F: Fn(&str) -> Vec<T>, T: 'a + Eq> Segmenter<'a> for F {
 }
 
 /// A strategy for segmenting strings into their constituent bytes.
+///
+/// ```
+/// # use fuzzywuzzy::segmentation::{Segmenter, ByteSegmenter};
+/// // U+00E4
+/// assert_eq!(ByteSegmenter.segment("ä"), vec![0xc3u8, 0xa4u8]);
+/// // U+0061 + U+0308
+/// assert_eq!(ByteSegmenter.segment("ä"), vec![0x61u8, 0xccu8, 0x88u8]);
+/// ```
 pub struct ByteSegmenter;
 
 impl<'a> Segmenter<'a> for ByteSegmenter {
@@ -71,6 +90,17 @@ impl<'a> Segmenter<'a> for ByteSegmenter {
 /// Note that `char` is a Unicode Scalar Value which is a subset of Unicode code points disallowing surrogates.
 /// UTF-8, which all Rust strings are guaranteed to be, also disallows surrogates.
 /// So all of the Unicode Scalar Values produced here are UTF-8 code points.
+///
+/// ```
+/// # use fuzzywuzzy::segmentation::{Segmenter, CodePointSegmenter};
+/// // U+00E4
+/// assert_eq!(CodePointSegmenter.segment("ä"), vec!['ä']);
+/// // U+0061 + U+0308
+/// assert_eq!(CodePointSegmenter.segment("ä"), vec!['a', '\u{0308}']);
+/// // 'किमपि' (kimapi) and 'किमप' (kimapa)
+/// assert_eq!(CodePointSegmenter.segment("किमपि"), vec!['क', 'ि', 'म', 'प', 'ि']);
+/// assert_eq!(CodePointSegmenter.segment("किमप"), vec!['क', 'ि', 'म', 'प']);
+/// ```
 pub struct CodePointSegmenter;
 
 impl<'a> Segmenter<'a> for CodePointSegmenter {
@@ -91,6 +121,17 @@ mod unicode_segmenters {
     /// A strategy for segmenting strings into their constituent Unicode graphemes. Requires default feature "segmentation".
     ///
     /// This just delegates to [unicode_segmentation].
+    ///
+    /// ```
+    /// # use fuzzywuzzy::segmentation::{Segmenter, GraphemeSegmenter};
+    /// // U+00E4
+    /// assert_eq!(GraphemeSegmenter.segment("ä"), vec!["ä"]);
+    /// // U+0061 + U+0308
+    /// assert_eq!(GraphemeSegmenter.segment("ä"), vec!["ä"]);
+    /// // 'किमपि' (kimapi) and 'किमप' (kimapa)
+    /// assert_eq!(GraphemeSegmenter.segment("किमपि"), vec!["कि", "म", "पि"]);
+    /// assert_eq!(GraphemeSegmenter.segment("किमप"), vec!["कि", "म", "प"]);
+    /// ```
     pub struct GraphemeSegmenter;
 
     impl<'a> Segmenter<'a> for GraphemeSegmenter {
