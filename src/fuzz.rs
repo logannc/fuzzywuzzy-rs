@@ -1,7 +1,7 @@
 //! Fuzzy string matching scoring primitives.
 
+use crate::utils;
 use std::collections::HashSet;
-use utils;
 
 /// Returns the ratio of the length of matching character sequences to the sum of the length of the input strings.
 ///
