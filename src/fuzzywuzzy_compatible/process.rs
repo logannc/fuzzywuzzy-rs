@@ -115,15 +115,13 @@ where
 /// Quickly, stably dedupe strings by fuzzily comparing them to each other.
 /// Delegates to [dedupe_full].
 pub fn dedupe<'a>(items: &[&'a str], threshold: Score) -> Vec<&'a str> {
-    // TODO: use a better default scorer
-    let temp_scorer = |a: &&str, b: &&str| wratio(a, b, true, true).try_into().unwrap();
-    // TODO: extract this default sorter
+    let scorer = |a: &&str, b: &&str| wratio(a, b, true, true).try_into().unwrap();
     let sorter = |a: &&str, b: &&str| match a.len().cmp(&b.len()) {
         Ordering::Less => Ordering::Less,
         Ordering::Greater => Ordering::Greater,
         Ordering::Equal => a.cmp(b),
     };
-    dedupe_full(items, threshold, temp_scorer, sorter, true)
+    dedupe_full(items, threshold, scorer, sorter, true)
         .into_iter()
         .map(|s| *s)
         .collect()
@@ -152,6 +150,7 @@ pub fn dedupe<'a>(items: &[&'a str], threshold: Score) -> Vec<&'a str> {
 /// # use core::cmp::Ordering;
 /// # use core::convert::TryInto;
 /// # use fuzzywuzzy::primitives::{Match, Score};
+/// # use fuzzywuzzy::fuzzywuzzy_compatible::fuzz::wratio;
 /// # use fuzzywuzzy::fuzzywuzzy_compatible::process::{ default_processor, default_scorer, dedupe_full };
 /// let frodo_baggin = "Frodo Baggin";
 /// let frodo_baggins = "Frodo Baggins";
@@ -164,14 +163,7 @@ pub fn dedupe<'a>(items: &[&'a str], threshold: Score) -> Vec<&'a str> {
 /// let expected_stable = vec![&frodo_baggins, &samwise, &gandalf, &bilbo];
 /// // ... but not when we don't require `stable`.
 /// let expected_unstable = vec![&samwise, &gandalf, &frodo_baggins, &bilbo];
-/// # // TODO: fix temp scorer
-/// let temp_scorer = |a: &&str, b: &&str| {
-///     if a.chars().next() == b.chars().next() {
-///         100u8.try_into().unwrap()
-///     } else {
-///         0u8.try_into().unwrap()
-///     }
-/// };
+/// let scorer = |a: &&str, b: &&str| wratio(a, b, true, true).try_into().unwrap();
 /// let sorter = |a: &&str, b: &&str| {
 ///     match a.len().cmp(&b.len()) {
 ///         Ordering::Less => Ordering::Less,
@@ -179,8 +171,8 @@ pub fn dedupe<'a>(items: &[&'a str], threshold: Score) -> Vec<&'a str> {
 ///         Ordering::Equal => a.cmp(b),
 ///     }
 /// };
-/// assert_eq!(dedupe_full(&contains_dupes, 70.try_into().unwrap(), temp_scorer, sorter, true), expected_stable);
-/// assert_eq!(dedupe_full(&contains_dupes, 70.try_into().unwrap(), temp_scorer, sorter, false), expected_unstable);
+/// assert_eq!(dedupe_full(&contains_dupes, 70.try_into().unwrap(), scorer, sorter, true), expected_stable);
+/// assert_eq!(dedupe_full(&contains_dupes, 70.try_into().unwrap(), scorer, sorter, false), expected_unstable);
 /// ```
 pub fn dedupe_full<'a, A: 'a + Eq + Ord>(
     items: &'a [A],
