@@ -11,5 +11,4 @@ pub mod fuzz;
 pub mod fuzzywuzzy_compatible;
 pub mod normalization;
 pub mod primitives;
-pub mod process;
 pub mod segmentation;
