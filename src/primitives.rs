@@ -5,6 +5,12 @@ use core::{
     convert::{From, TryFrom},
 };
 
+// TODO: turn primitives.rs into
+// primitives/
+//   mod.rs
+//   types.rs for basic types
+//   traits.rs? or maybe per trait
+
 /// Represents a matching streak of characters between two strings.
 ///
 /// See [find_longest_match] for details.
