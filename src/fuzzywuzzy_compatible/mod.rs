@@ -5,6 +5,8 @@
 //! cases if your project needs grow beyond that.
 //!
 //! This module's implementation may change at any time if it improves compliance with [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy)'s results.
+//!
+//! Warning/Note: Almost everything in this module assumes [Codepoint Segmentation](CodePointSegmenter) which is not always appropriate.
 
 pub mod fuzz;
 pub mod process;

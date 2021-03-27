@@ -246,16 +246,18 @@ fn token_set(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process:
     let intersect_str = intersection.join(" ");
     let diff1to2_str = diff1to2.join(" ");
     let diff2to1_str = diff2to1.join(" ");
-    let combined_1to2 = if !diff1to2_str.is_empty() {
-        intersect_str.to_string() + " " + &diff1to2_str
-    } else {
-        intersect_str.to_string()
-    };
-    let combined_2to1 = if !diff2to1_str.is_empty() {
-        intersect_str.to_string() + " " + &diff2to1_str
-    } else {
-        intersect_str.to_string()
-    };
+    let combined_1to2 = vec![intersect_str.to_string(), diff1to2_str.to_string()];
+    let combined_1to2 = combined_1to2
+        .into_iter()
+        .filter(|s| !s.is_empty())
+        .intersperse(" ".into())
+        .collect::<String>();
+    let combined_2to1 = vec![intersect_str.to_string(), diff2to1_str.to_string()];
+    let combined_2to1 = combined_2to1
+        .into_iter()
+        .filter(|s| !s.is_empty())
+        .intersperse(" ".into())
+        .collect::<String>();
     if partial {
         *vec![
             partial_ratio(&intersect_str, &combined_1to2).score(),
@@ -266,6 +268,7 @@ fn token_set(s1: &str, s2: &str, partial: bool, force_ascii: bool, full_process:
         .max()
         .unwrap()
     } else {
+        dbg!(&intersect_str, &combined_1to2, &combined_2to1);
         *vec![
             ratio(&intersect_str, &combined_1to2).score(),
             ratio(&intersect_str, &combined_2to1).score(),
@@ -367,6 +370,7 @@ pub fn partial_token_set_ratio(s1: &str, s2: &str, force_ascii: bool, full_proce
 /// ```
 /// # use fuzzywuzzy::fuzzywuzzy_compatible::fuzz::wratio;
 /// assert_eq!(wratio("", "", true, true), 100);
+/// assert_eq!(wratio("foo", "bar", true, true), 0);
 /// assert_eq!(wratio("hello world", "hello world", true, true), 100);
 /// assert_eq!(wratio("hello world", "world hello", true, true), 95);
 /// assert_eq!(wratio("new york mets", "new YORK mets", true, true), 100);

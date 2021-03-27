@@ -1,23 +1,18 @@
 //! Convenience methods to process fuzzy matching queries for common use cases.
 //!
 //! Lack of functions compared to [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy) are just 'get top N', at this point.
+use crate::fuzzywuzzy_compatible::fuzz::wratio;
 use crate::fuzzywuzzy_compatible::utils::full_process;
 use crate::primitives::{Match, Processor, Score, Scorer, Sorter};
 use core::cmp::Ordering;
 use core::convert::TryInto;
 
-// TODO: link wratio
-/// The default scorer used for functions in this module. Delegates to wratio.
+/// The default scorer used for functions in this module. Delegates to [wratio].
 ///
 /// The `&&str` is a consequence of the type signature of the [Scorer] trait
 /// and Rust disliking `str` without a reference.
 pub fn default_scorer(query: &&str, choice: String) -> Score {
-    // TODO: WRatio when implemented
-    if *query == choice {
-        100.try_into().unwrap()
-    } else {
-        0.try_into().unwrap()
-    }
+    wratio(query, &choice, true, true).try_into().unwrap()
 }
 
 /// The default processor used for functions in this module. Delegates to
@@ -39,7 +34,7 @@ pub fn default_processor(s: &&str) -> String {
 /// # use fuzzywuzzy::fuzzywuzzy_compatible::process::extract_without_order;
 /// let query = "bar";
 /// let choices = vec!["foo", "bar", "baz"];
-/// assert_eq!(extract_without_order(query, &choices), vec![Match{ item: "foo", score: 0.try_into().unwrap() }, Match{ item: "bar", score: 100.try_into().unwrap() }, Match{ item: "baz", score: 0.try_into().unwrap() }, ]);
+/// assert_eq!(extract_without_order(query, &choices), vec![Match{ item: "foo", score: 0.try_into().unwrap() }, Match{ item: "bar", score: 100.try_into().unwrap() }, Match{ item: "baz", score: 67.try_into().unwrap() }, ]);
 /// ```
 pub fn extract_without_order<'a>(query: &'a str, choices: &[&'a str]) -> Vec<Match<&'a str>> {
     extract_without_order_full(
@@ -89,7 +84,7 @@ pub fn extract_without_order<'a>(query: &'a str, choices: &[&'a str]) -> Vec<Mat
 /// # use fuzzywuzzy::fuzzywuzzy_compatible::process::{ default_processor, default_scorer, extract_without_order_full };
 /// let query = "bar";
 /// let choices = vec!["foo", "bar", "baz"];
-/// assert_eq!(extract_without_order_full(query, &choices, default_processor, default_scorer, 0.try_into().unwrap()), vec![Match{ item: &"foo", score: 0.try_into().unwrap() }, Match{ item: &"bar", score: 100.try_into().unwrap() }, Match{ item: &"baz", score: 0.try_into().unwrap() }, ]);
+/// assert_eq!(extract_without_order_full(query, &choices, default_processor, default_scorer, 0.try_into().unwrap()), vec![Match{ item: &"foo", score: 0.try_into().unwrap() }, Match{ item: &"bar", score: 100.try_into().unwrap() }, Match{ item: &"baz", score: 67.try_into().unwrap() }, ]);
 /// ```
 pub fn extract_without_order_full<'a, 'b, A: 'a, B, C, P, S>(
     query: A,
@@ -121,13 +116,7 @@ where
 /// Delegates to [dedupe_full].
 pub fn dedupe<'a>(items: &[&'a str], threshold: Score) -> Vec<&'a str> {
     // TODO: use a better default scorer
-    let temp_scorer = |a: &&str, b: &&str| {
-        if a.chars().next() == b.chars().next() {
-            100u8.try_into().unwrap()
-        } else {
-            0u8.try_into().unwrap()
-        }
-    };
+    let temp_scorer = |a: &&str, b: &&str| wratio(a, b, true, true).try_into().unwrap();
     // TODO: extract this default sorter
     let sorter = |a: &&str, b: &&str| match a.len().cmp(&b.len()) {
         Ordering::Less => Ordering::Less,
