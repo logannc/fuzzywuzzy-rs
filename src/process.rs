@@ -6,12 +6,12 @@ use std::cmp::Ordering;
 /// is a set of text which was matched from the list of choices by the provided scoring function,
 /// along with the score produced by the scoring function.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Match {
+pub struct Score {
     text: String,
     score: u8,
 }
 
-impl Match {
+impl Score {
     pub fn new<V: AsRef<str>>(text: V, score: u8) -> Self {
         Self {
             text: text.as_ref().to_string(),
@@ -28,30 +28,30 @@ impl Match {
     }
 }
 
-/// Match ordinality is defined by integer ordinality rules applied on the matches' scores.
-impl Ord for Match {
+/// Score ordinality is defined by integer ordinality rules applied on the matches' scores.
+impl Ord for Score {
     fn cmp(&self, other: &Self) -> Ordering {
         self.score.cmp(&other.score())
     }
 }
 
-impl PartialOrd for Match {
+impl PartialOrd for Score {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.score.partial_cmp(&other.score())
     }
 }
 
-/// Convenience trait `impl` for converting `("text", 100)` to `Match { text: "text".into(), score: 100 }`.
-impl<V: AsRef<str>> From<(V, u8)> for Match {
+/// Convenience trait `impl` for converting `("text", 100)` to `Score { text: "text".into(), score: 100 }`.
+impl<V: AsRef<str>> From<(V, u8)> for Score {
     fn from((text, score): (V, u8)) -> Self {
         Self::new(text, score)
     }
 }
 
-/// Convenience trait `impl` for comparing `("text", 100)` with `Match { text: "text".into(), score: 100 }`.
-impl<V: AsRef<str>> PartialEq<(V, u8)> for Match {
+/// Convenience trait `impl` for comparing `("text", 100)` with `Score { text: "text".into(), score: 100 }`.
+impl<V: AsRef<str>> PartialEq<(V, u8)> for Score {
     fn eq(&self, other: &(V, u8)) -> bool {
-        let other_choice = Match::new(other.0.as_ref(), other.1);
+        let other_choice = Score::new(other.0.as_ref(), other.1);
         self.eq(&other_choice)
     }
 }
@@ -92,7 +92,7 @@ pub fn extract_without_order<I, T, P, S, Q>(
     processor: P,
     scorer: S,
     score_cutoff: u8,
-) -> Vec<Match>
+) -> Vec<Score>
 where
     I: IntoIterator<Item = T>,
     T: AsRef<str>,
@@ -115,7 +115,7 @@ where
         let processed: String = processor(choice.as_ref(), false);
         let score: u8 = scorer(processed_query.as_str(), processed.as_str(), true, true);
         if score >= score_cutoff {
-            results.push(Match::new(choice, score))
+            results.push(Score::new(choice, score))
         }
     }
     results
@@ -189,7 +189,7 @@ pub fn extract_one<I, T, P, S, Q>(
     processor: P,
     scorer: S,
     score_cutoff: u8,
-) -> Option<Match>
+) -> Option<Score>
 where
     I: IntoIterator<Item = T>,
     T: AsRef<str>,
