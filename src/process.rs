@@ -2,8 +2,8 @@
 
 use std::cmp::Ordering;
 
-/// All of the convenience methods in the `process` module return thresholded _matches_. A match
-/// is a set of text which was matched from the list of choices by the provided scoring function,
+/// All of the convenience methods in the `process` module return thresholded scores. A score
+/// is a set of text which was compared against the list of choices by the provided scoring function,
 /// along with the score produced by the scoring function.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Score {
@@ -28,7 +28,7 @@ impl Score {
     }
 }
 
-/// Score ordinality is defined by integer ordinality rules applied on the matches' scores.
+/// Score ordering is based on the ordering of the underlying integer scores.
 impl Ord for Score {
     fn cmp(&self, other: &Self) -> Ordering {
         self.score.cmp(&other.score())
@@ -58,7 +58,7 @@ impl<V: AsRef<str>> PartialEq<(V, u8)> for Score {
 
 /// Score multiple options against a base query string and return all exceeding a cutoff.
 ///
-/// Returns a Vec with the options and their match score if their score is above the cutoff.
+/// Returns a Vec with the options and their query score if their score is above the cutoff.
 /// Results are configurable using custom text processors and scorers.
 /// Good default choices are `utils::full_process` as the processor, `fuzz:wratio` as the scorer, and zero as the score_cutoff.
 ///
